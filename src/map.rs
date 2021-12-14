@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Map {
     DustShelf,
     ThroneRoom,
@@ -71,4 +71,8 @@ impl From<u8> for Map {
             _ => Map::Unknown,
         }
     }
+}
+
+pub enum Tile {
+    
 }
