@@ -1,11 +1,13 @@
 mod saves;
 mod savedata;
 mod rom;
+mod tile;
+mod palette;
 mod map;
 mod inventory;
 mod data;
 
-use std::{fmt::Display, fs};
+use std::fmt::Display;
 
 fn feedback<D: Display, T, E: Display>(description: D, result: Result<T, E>) {
     match result {
