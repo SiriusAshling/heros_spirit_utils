@@ -145,7 +145,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "hs_save_decoder"
+name = "heros_spirit_utils"
 version = "0.1.0"
 dependencies = [
  "base64",
