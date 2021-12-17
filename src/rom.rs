@@ -2,7 +2,7 @@ use std::{path::Path, error::Error, fs};
 
 use image::{ImageBuffer, ImageFormat, RgbaImage};
 
-use crate::{map::Map, data::TILE_16S, tile::{Tile16, self, Tile8Data}, palette::{self, DEFAULT_PALETTE}};
+use crate::{map::Map, data::TERRAIN_FLAGS, tile::{Tile16, self, Tile8Data, Tile8}, palette::{self, DEFAULT_PALETTE}};
 
 fn decode_graphics<P: AsRef<Path>>(path: P, tile16_list: &[Tile16]) -> Result<Vec<Tile8Data>, Box<dyn Error>> {
     let data = fs::read(&path)?;
@@ -38,20 +38,43 @@ fn decode_graphics<P: AsRef<Path>>(path: P, tile16_list: &[Tile16]) -> Result<Ve
         tile8_list.push(pixels);
     }
 
-    for index in 1..=TILE_16S.len() {
+    fs::create_dir("graphics");
+
+    for (index, tile16) in tile16_list.into_iter().enumerate() {
         let mut image: RgbaImage = ImageBuffer::new(16, 16);
 
-        tile::draw_tile16(index, &tile8_list, &tile16_list, DEFAULT_PALETTE, &mut image, 0, 0);
+        tile::draw_tile16(&tile8_list, tile16, DEFAULT_PALETTE, &mut image, 0, 0, false);
 
         let mut path = path.as_ref()
             .parent().unwrap()
             .parent().unwrap()
             .to_owned();
-        fs::create_dir("graphics");
-        path.push("graphics");
-        path.push(format!("{}.png", index));
+        fs::create_dir("graphics/tile16");
+        path.push("graphics/tile16");
+        path.push(format!("{}.png", index + 1));
         image.save_with_format(&path, ImageFormat::Png)?;
     }
+
+    let len = tile8_list.len() as u32;
+    let width = 80;
+    let height = len + 9 / 10;
+    let mut image: RgbaImage = ImageBuffer::new(width, height);
+
+    for index in 0..len {
+        let xoffset = index % 10 * 8;
+        let yoffset = index / 10 * 8;
+
+        let tile8 = Tile8 { index: index as u16, ..Tile8::default() };
+
+        tile::draw_tile8(&tile8_list, &tile8, DEFAULT_PALETTE, &mut image, xoffset, yoffset, false);
+    }
+    let mut path = path.as_ref()
+        .parent().unwrap()
+        .parent().unwrap()
+        .to_owned();
+    fs::create_dir("graphics/tile8");
+    path.push("graphics/tile8/all.png");
+    image.save_with_format(&path, ImageFormat::Png)?;
 
     Ok(tile8_list)
 }
@@ -129,11 +152,27 @@ fn decode_map<P: AsRef<Path>>(path: P, tile8_list: &[Tile8Data], tile16_list: &[
 
     let is_glitch = map_id == 13;
     for (y, row) in tiles.into_iter().enumerate() {
-        for (x, mut tile) in row.into_iter().enumerate() {
-            if is_glitch { tile += 67; }
-            let tile = tile as usize;
-            let palette = palette::get_palette(tile, map);
-            tile::draw_tile16(tile, &tile8_list, &tile16_list, palette, &mut image, x as u32 * 16, y as u32 * 16);
+        for (x, tile) in row.into_iter().enumerate() {
+            let mut tile = tile as usize;
+            if let Some(tile16) = tile16_list.get(tile - 1) {
+                let x = x as u32 * 16;
+                let y = y as u32 * 16;
+
+                let tile_flags = if is_glitch {
+                    tile += 67;
+                    TERRAIN_FLAGS[tile - 64]
+                } else {
+                    TERRAIN_FLAGS[tile]
+                };
+                let passage = tile_flags & 0b00010010 == 0b00010010;
+                let palette = palette::get_palette(tile, map);
+
+                tile::draw_tile16(&tile8_list, tile16, palette, &mut image, x, y, false);
+
+                if passage {
+                    tile::draw_tile8(&tile8_list, &Tile8::from(825), DEFAULT_PALETTE, &mut image, x + 4, y + 4, false);
+                }
+            }
         }
     }
 
