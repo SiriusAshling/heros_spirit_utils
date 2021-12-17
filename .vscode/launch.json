@@ -7,15 +7,15 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'hs_save_decoder'",
+            "name": "Debug executable 'heros_spirit_utils'",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=hs_save_decoder",
-                    "--package=hs_save_decoder"
+                    "--bin=heros_spirit_utils",
+                    "--package=heros_spirit_utils"
                 ],
                 "filter": {
-                    "name": "hs_save_decoder",
+                    "name": "heros_spirit_utils",
                     "kind": "bin"
                 }
             },
@@ -25,16 +25,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in executable 'hs_save_decoder'",
+            "name": "Debug unit tests in executable 'heros_spirit_utils'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
-                    "--bin=hs_save_decoder",
-                    "--package=hs_save_decoder"
+                    "--bin=heros_spirit_utils",
+                    "--package=heros_spirit_utils"
                 ],
                 "filter": {
-                    "name": "hs_save_decoder",
+                    "name": "heros_spirit_utils",
                     "kind": "bin"
                 }
             },
