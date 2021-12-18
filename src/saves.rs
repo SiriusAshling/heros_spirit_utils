@@ -13,7 +13,7 @@ use crate::data::DEOBF;
 
 fn unshift(s: &mut String, offset: usize) {
     let result = s.split_off(s.len() - offset);
-    *s = result + &s;
+    *s = result + s;
 }
 fn flip(s: &mut String) {
     *s = s.chars().rev().collect();
@@ -74,7 +74,7 @@ fn unscramble(mut data: String) -> Result<SaveDat, Box<dyn Error>> {
         second_iteration += &piece;
     }
     let mut second_iteration = &second_iteration[..];
-    if let Some(index) = second_iteration.rfind("}") {
+    if let Some(index) = second_iteration.rfind('}') {
         second_iteration = &second_iteration[..=index];
     }
 
@@ -86,7 +86,7 @@ pub fn decode<P: AsRef<Path> + Display>(path: P) -> Result<(), Box<dyn Error>> {
     let savedat = unscramble(data)?;
 
     // position
-    let mut position_parts = savedat.position.split(".");
+    let mut position_parts = savedat.position.split('.');
     let map = Map::from(position_parts.next().ok_or("malformed data")?.parse::<u8>()?);
     let x = position_parts.next().ok_or("malformed data")?.parse()?;
     let y = position_parts.next().ok_or("malformed data")?.parse()?;

@@ -103,9 +103,9 @@ where
     } = tile8;
     let tile8 = &tile8_list[*index as usize];
 
-    for (y, row) in tile8.into_iter().enumerate() {
-        for (x, pixel) in row.into_iter().enumerate() {
-            let mut pixel = palette[*pixel as usize];
+    for (y, row) in tile8.iter().enumerate() {
+        for (x, pixel) in row.iter().enumerate() {
+            let pixel = palette[*pixel as usize];
             let mut x =
             if *flipx { 7 - x }
             else { x } as u32;
@@ -113,9 +113,7 @@ where
             if *flipy { 7 - y }
             else { y } as u32;
             if *rotate {
-                let temp = x;
-                x = y;
-                y = temp;
+                std::mem::swap(&mut x, &mut y);
             }
             x += xoffset;
             y += yoffset;
@@ -144,10 +142,10 @@ where
     P::Subpixel: 'static,
     Container: Deref<Target = [P::Subpixel]> + DerefMut,
 {
-    for tile_index in 0..4 {
+    for (tile_index, tile8) in tile16.iter().enumerate() {
         let tile_xoffset = xoffset + if tile_index % 2 == 1 { 8 } else { 0 };
         let tile_yoffset = yoffset + if tile_index > 1 { 8 } else { 0 };
 
-        draw_tile8(tile8_list, &tile16[tile_index], palette, image, tile_xoffset, tile_yoffset, blend);
+        draw_tile8(tile8_list, tile8, palette, image, tile_xoffset, tile_yoffset, blend);
     }
 }

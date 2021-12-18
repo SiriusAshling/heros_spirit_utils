@@ -1,8 +1,6 @@
 use std::{path::Path, error::Error, fs};
 
-use image::{ImageBuffer, ImageFormat, RgbaImage};
-
-use crate::{map::Map, data::TERRAIN_FLAGS, tile::{Tile16, self, Tile8Data, Tile8}, palette::{self, DEFAULT_PALETTE}, sprite::{SpriteType, ThreeByteSpriteType, Sprite}, feedback};
+use crate::{map::Map, tile::{Tile16, self, Tile8Data}, sprite::{SpriteType, ThreeByteSpriteType, Sprite}, util, draw};
 
 fn decode_graphics<P: AsRef<Path>>(path: P, map_tile16_list: &[Tile16], sprite_tile16_list: &[Tile16]) -> Result<Vec<Tile8Data>, Box<dyn Error>> {
     let data = fs::read(&path)?;
@@ -21,8 +19,8 @@ fn decode_graphics<P: AsRef<Path>>(path: P, map_tile16_list: &[Tile16], sprite_t
         let texture_bits = &bits[index * 128..(index + 1) * 128];
 
         let mut pixels = vec![vec![0; 8]; 8];
-        for x in 0..8 {
-            for y in 0..8 {
+        for (x, col) in pixels.iter_mut().enumerate() {
+            for (y, pixel) in col.iter_mut().enumerate() {
                 let mut color = 0u8;
                 let bit_index = x * 16 + y;
                 if texture_bits[bit_index] {
@@ -31,25 +29,11 @@ fn decode_graphics<P: AsRef<Path>>(path: P, map_tile16_list: &[Tile16], sprite_t
                 if texture_bits[bit_index + 8] {
                     color += 2;
                 }
-                pixels[x][y] = color;
+                *pixel = color;
             }
         }
 
         tile8_list.push(pixels);
-    }
-
-    let len = tile8_list.len() as u32;
-    let width = 80;
-    let height = len + 9 / 10;
-    let mut image: RgbaImage = ImageBuffer::new(width, height);
-
-    for index in 0..len {
-        let xoffset = index % 10 * 8;
-        let yoffset = index / 10 * 8;
-
-        let tile8 = Tile8 { index: index as u16, ..Tile8::default() };
-
-        tile::draw_tile8(&tile8_list, &tile8, DEFAULT_PALETTE, &mut image, xoffset, yoffset, false);
     }
 
     let mut path = path.as_ref()
@@ -57,36 +41,20 @@ fn decode_graphics<P: AsRef<Path>>(path: P, map_tile16_list: &[Tile16], sprite_t
         .parent().unwrap()
         .to_owned();
     path.push("graphics");
-    fs::create_dir(&path);
+    util::ensure_dir(&path)?;
 
     let mut tile8_path = path.clone();
     tile8_path.push("tile8");
-    fs::create_dir(&tile8_path);
+    util::ensure_dir(&tile8_path)?;
     tile8_path.push("all.png");
-    image.save_with_format(&tile8_path, ImageFormat::Png)?;
+
+    draw::draw_tile8s(tile8_path, &tile8_list)?;
 
     path.push("tile16");
+    util::ensure_dir(&path)?;
 
-    fs::create_dir(&path);
-    for (index, tile16) in map_tile16_list.into_iter().enumerate() {
-        let mut image: RgbaImage = ImageBuffer::new(16, 16);
+    draw::draw_tile16s(&path, &tile8_list, map_tile16_list, sprite_tile16_list)?;
 
-        tile::draw_tile16(&tile8_list, tile16, DEFAULT_PALETTE, &mut image, 0, 0, false);
-
-        let mut tile16_path = path.clone();
-        tile16_path.push(format!("map_{}.png", index + 1));
-        image.save_with_format(&tile16_path, ImageFormat::Png)?;
-    }
-    for (index, tile16) in sprite_tile16_list.into_iter().enumerate() {
-        let mut image: RgbaImage = ImageBuffer::new(16, 16);
-
-        let palette = palette::get_sprite_palette(index);
-        tile::draw_tile16(&tile8_list, tile16, palette, &mut image, 0, 0, false);
-
-        let mut tile16_path = path.clone();
-        tile16_path.push(format!("sprite_{}.png", index));
-        image.save_with_format(&tile16_path, ImageFormat::Png)?;
-    }
     Ok(tile8_list)
 }
 
@@ -94,17 +62,19 @@ fn decode_map<P: AsRef<Path>>(path: P, tile8_list: &[Tile8Data], map_tile16_list
     let data = fs::read(&path)?;
     let map_id = data[0];
     let map = Map::from(map_id);
-    let width = data[1] as usize;
-    let height = data[2] as usize;
+    let width = data[1];
+    let width_usize = width as usize;
+    let height = data[2];
+    let height_usize = height as usize;
 
-    let tiles_end = 3 + width * height * 7 / 8;
+    let tiles_end = 3 + width_usize * height_usize * 7 / 8;
     let tile_bytes = &data[3..tiles_end];
     let sprite_data = &data[tiles_end..];
 
     let tile_bytes_len = tile_bytes.len();
     let mut tile_bits = Vec::with_capacity(tile_bytes_len * 8);
 
-    for (index, byte) in tile_bytes.into_iter().enumerate() {
+    for (index, byte) in tile_bytes.iter().enumerate() {
         let mut bits = Vec::with_capacity(8);
 
         for bit_index in 0..8 {
@@ -125,9 +95,8 @@ fn decode_map<P: AsRef<Path>>(path: P, tile8_list: &[Tile8Data], map_tile16_list
             }
 
             let mut tile = 0u8;
-            for bit_index in 0..7 {
-                let bit = tile_bits[bit_index];
-                if bit {
+            for (bit_index, bit) in tile_bits.iter().enumerate().take(7) {
+                if *bit {
                     tile |= 1 << (6 - bit_index);
                 }
             }
@@ -135,9 +104,9 @@ fn decode_map<P: AsRef<Path>>(path: P, tile8_list: &[Tile8Data], map_tile16_list
         })
     };
 
-    let mut tiles = Vec::with_capacity(height);
+    let mut tiles = Vec::with_capacity(height_usize);
     for _ in 0..height {
-        let mut row = Vec::with_capacity(width);
+        let mut row = Vec::with_capacity(width_usize);
 
         for _ in 0..width {
             if let Some(tile) = read_tile() {
@@ -148,7 +117,7 @@ fn decode_map<P: AsRef<Path>>(path: P, tile8_list: &[Tile8Data], map_tile16_list
         tiles.push(row);
     }
 
-    let mut sprites = vec![vec![None; width]; height];
+    let mut sprites = vec![vec![None; width_usize]; height_usize];
     let mut sprite_index = 0;
     let len = sprite_data.len();
     while sprite_index < len {
@@ -173,50 +142,12 @@ fn decode_map<P: AsRef<Path>>(path: P, tile8_list: &[Tile8Data], map_tile16_list
         .parent().unwrap()
         .to_owned();
     path.push("maps");
-    fs::create_dir(&path);
+    util::ensure_dir(&path)?;
     path.push(format!("{:?}", Map::from(map_id)));
-    fs::write(&path, format!("{}", display))?;
-
-    let mut image: RgbaImage = ImageBuffer::new(width as u32 * 16, height as u32 * 16);
-
-    let is_glitch = map_id == 13;
-    for (y, row) in tiles.into_iter().enumerate() {
-        for (x, tile) in row.into_iter().enumerate() {
-            let mut tile = tile as usize;
-
-            let tile_flags = if is_glitch {
-                tile += 67;
-                TERRAIN_FLAGS[tile - 64]
-            } else {
-                TERRAIN_FLAGS[tile]
-            };
-
-            if let Some(tile16) = map_tile16_list.get(tile - 1) {
-                let pixel_x = x as u32 * 16;
-                let pixel_y = y as u32 * 16;
-
-                let passage = tile_flags & 0b00010010 == 0b00010010;
-                let palette = palette::get_map_palette(tile, map);
-
-                tile::draw_tile16(&tile8_list, tile16, palette, &mut image, pixel_x, pixel_y, false);
-
-                if passage {
-                    tile::draw_tile8(&tile8_list, &Tile8::from(825), DEFAULT_PALETTE, &mut image, pixel_x + 4, pixel_y + 4, false);
-                }
-
-                if let Some(sprite) = &sprites[y][x] {
-                    match sprite {
-                        Sprite::WindRoute => tile::draw_tile16(&tile8_list, &sprite_tile16_list[67], palette::get_sprite_palette(67), &mut image, pixel_x, pixel_y, true),
-                    }
-                }
-            }
-        }
-    }
-
+    fs::write(&path, display)?;
     path.set_extension("png");
-    image.save_with_format(&path, ImageFormat::Png)?;
 
-    Ok(())
+    draw::draw_map(&path, map, width, height, tiles, sprites, tile8_list, map_tile16_list, sprite_tile16_list)
 }
 
 pub fn decode<P: AsRef<Path>>(path: P) -> Result<(), Box<dyn Error>> {
@@ -240,7 +171,7 @@ pub fn decode<P: AsRef<Path>>(path: P) -> Result<(), Box<dyn Error>> {
 
     if let Some(tile8_list) = tile8_list {
         for map in maps {
-            feedback(format!("Decode map {}", map.display()), decode_map(map, &tile8_list, &map_tile16_list, &sprite_tile16_list));
+            util::feedback(format!("Decode map {}", map.display()), decode_map(map, &tile8_list, &map_tile16_list, &sprite_tile16_list));
         }
     }
 

@@ -28,10 +28,8 @@ impl From<u8> for SpriteType {
             _ =>
                 if THREE_BYTE_ID_RANGES.iter().any(|range| range.contains(&id)) { SpriteType::Other(3) }
                 else if FOUR_BYTE_IDS.contains(&id) { SpriteType::Other(4) }
-                else if FIVE_BYTE_IDS.contains(&id) { SpriteType::Other(5) }
-                else if FIVE_BYTE_ID_RANGES.iter().any(|range| range.contains(&id)) { SpriteType::Other(5) }
-                else if SEVEN_BYTE_IDS.contains(&id) { SpriteType::Other(7) }
-                else if SEVEN_BYTE_ID_RANGES.iter().any(|range| range.contains(&id)) { SpriteType::Other(7) }
+                else if FIVE_BYTE_IDS.contains(&id) || FIVE_BYTE_ID_RANGES.iter().any(|range| range.contains(&id)) { SpriteType::Other(5) }
+                else if SEVEN_BYTE_IDS.contains(&id) || SEVEN_BYTE_ID_RANGES.iter().any(|range| range.contains(&id)) { SpriteType::Other(7) }
                 else { SpriteType::Other(usize::MAX) }
         }
     }
