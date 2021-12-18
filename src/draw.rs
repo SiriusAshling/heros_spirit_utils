@@ -137,9 +137,6 @@ pub fn draw_map<P: AsRef<Path>>(path: P, map: Map, width: u8, height: u8, tiles:
 
                             continue;
                         },
-                        Enemy::CloneP => 30,
-                        Enemy::CloneW => 31,
-                        Enemy::Witch => 34,
                         // Enemy::Ragnarok => 20,
                         // Enemy::EvilBunny => 42,
                         // Enemy::DarkGhost => 43,
