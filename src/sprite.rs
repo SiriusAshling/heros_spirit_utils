@@ -4,6 +4,17 @@ use std::ops::RangeInclusive;
 pub enum Collectible {
     GoldKey,
     Sword,
+    SilverKey,
+    PortalStone,
+    Gem,
+    Treasure,
+    BlueKey,
+    RedKey,
+    ShrineKey,
+    GemHeart,
+    PossumCoin,
+    TealKey,
+    PurpleKey,
 }
 
 impl From<Collectible> for u8 {
@@ -11,6 +22,17 @@ impl From<Collectible> for u8 {
         match collectible {
             Collectible::GoldKey => 0,
             Collectible::Sword => 6,
+            Collectible::SilverKey => 1,
+            Collectible::PortalStone => 8,
+            Collectible::Gem => 9,
+            Collectible::Treasure => 10,
+            Collectible::BlueKey => 5,
+            Collectible::RedKey => 3,
+            Collectible::ShrineKey => 14,
+            Collectible::GemHeart => 25,
+            Collectible::PossumCoin => 34,
+            Collectible::TealKey => 27,
+            Collectible::PurpleKey => 28,
         }
     }
 }
@@ -43,8 +65,19 @@ impl From<u8> for Sprite {
         match id {
             2 => Sprite::Collectible(Collectible::GoldKey),
             3 => Sprite::Collectible(Collectible::Sword),
+            5 => Sprite::Collectible(Collectible::SilverKey),
+            6 => Sprite::Collectible(Collectible::PortalStone),
+            7 => Sprite::Collectible(Collectible::Gem),
+            8 => Sprite::Collectible(Collectible::Treasure),
+            23 => Sprite::Collectible(Collectible::BlueKey),
             25 => Sprite::WindRoute,
             44 => Sprite::Save,
+            62 => Sprite::Collectible(Collectible::RedKey),
+            63 => Sprite::Collectible(Collectible::ShrineKey),
+            152 => Sprite::Collectible(Collectible::GemHeart),
+            213 => Sprite::Collectible(Collectible::PossumCoin),
+            248 => Sprite::Collectible(Collectible::TealKey),
+            250 => Sprite::Collectible(Collectible::PurpleKey),
             _ =>
                 if THREE_BYTE_ID_RANGES.iter().any(|range| range.contains(&id)) { Sprite::Other(3) }
                 else if FOUR_BYTE_IDS.contains(&id) { Sprite::Other(4) }

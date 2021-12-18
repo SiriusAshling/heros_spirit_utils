@@ -82,10 +82,10 @@ pub fn draw_map<P: AsRef<Path>>(path: P, map: Map, width: u8, height: u8, tiles:
 
                 if let Some(sprite) = &sprites[y][x] {
                     let sprite_index = match sprite {
-                        Sprite::Collectible(collectible) => {
-                            let mut index = u8::from(*collectible) + 17;
-                            if matches!(collectible, Collectible::Sword) && bright_map { index += 1 }
-                            index as usize
+                        Sprite::Collectible(collectible) => match collectible {
+                            Collectible::Sword | Collectible::SilverKey if bright_map => u8::from(*collectible) as usize + 18,
+                            Collectible::PossumCoin => 100,
+                            _ => u8::from(*collectible) as usize + 17,
                         },
                         Sprite::WindRoute => 67,
                         Sprite::Save => 0,
