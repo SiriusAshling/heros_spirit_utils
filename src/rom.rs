@@ -126,17 +126,13 @@ fn decode_map<P: AsRef<Path>>(path: P, tile8_list: &[Tile8Data], map_tile16_list
         sprites[y][x] = Some(sprite);
     }
 
-    let display = tiles.iter().map(|row| format!("{:?}", row)).collect::<Vec<_>>().join("\n");
-
     let mut path = path.as_ref()
         .parent().unwrap()
         .parent().unwrap()
         .to_owned();
     path.push("maps");
     util::ensure_dir(&path)?;
-    path.push(format!("{}_{:?}", map_id, map));
-    fs::write(&path, display)?;
-    path.set_extension("png");
+    path.push(format!("{}_{:?}.png", map_id, map));
 
     draw::draw_map(&path, map, width, height, tiles, sprites, tile8_list, map_tile16_list, sprite_tile16_list, enemy_tile16_list)
 }
