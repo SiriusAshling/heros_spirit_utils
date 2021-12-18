@@ -87,6 +87,7 @@ pub fn draw_map<P: AsRef<Path>>(path: P, map: Map, width: u8, height: u8, tiles:
                             Collectible::PossumCoin => 100,
                             _ => u8::from(*collectible) as usize + 17,
                         },
+                        Sprite::Door(door) => u8::from(*door) as usize + 2,
                         Sprite::WindRoute => 67,
                         Sprite::Save => 0,
                         Sprite::Other(_) => usize::MAX,

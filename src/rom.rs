@@ -127,7 +127,7 @@ fn decode_map<P: AsRef<Path>>(path: P, tile8_list: &[Tile8Data], map_tile16_list
         sprite_index += sprite.data_bytes();
 
         match &sprite {
-            Sprite::Collectible(_) | Sprite::WindRoute | Sprite::Save => sprites[y][x] = Some(sprite),
+            Sprite::Collectible(_) | Sprite::Door(_) | Sprite::WindRoute | Sprite::Save => sprites[y][x] = Some(sprite),
             Sprite::Other(_) => {},
         }
     }
