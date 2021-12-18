@@ -127,7 +127,7 @@ fn decode_map<P: AsRef<Path>>(path: P, tile8_list: &[Tile8Data], map_tile16_list
         sprite_index += sprite.data_bytes();
 
         match &sprite {
-            Sprite::WindRoute => sprites[y][x] = Some(Sprite::WindRoute),
+            Sprite::Collectible(_) | Sprite::WindRoute | Sprite::Save => sprites[y][x] = Some(sprite),
             Sprite::Other(_) => {},
         }
     }
@@ -140,7 +140,7 @@ fn decode_map<P: AsRef<Path>>(path: P, tile8_list: &[Tile8Data], map_tile16_list
         .to_owned();
     path.push("maps");
     util::ensure_dir(&path)?;
-    path.push(format!("{:?}", Map::from(map_id)));
+    path.push(format!("{}_{:?}", map_id, map));
     fs::write(&path, display)?;
     path.set_extension("png");
 

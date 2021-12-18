@@ -2,7 +2,7 @@ use std::{error::Error, path::Path};
 
 use image::{RgbaImage, ImageFormat, ImageBuffer};
 
-use crate::{tile::{Tile8, self, Tile8Data, Tile16}, palette::{DEFAULT_PALETTE, self}, data::TERRAIN_FLAGS, sprite::Sprite, map::Map};
+use crate::{tile::{Tile8, self, Tile8Data, Tile16}, palette::{DEFAULT_PALETTE, self}, data::{TERRAIN_FLAGS, BRIGHT_MAPS}, sprite::{Sprite, Collectible}, map::Map};
 
 pub fn draw_tile8s<P: AsRef<Path>>(path: P, tile8_list: &[Tile8Data]) -> Result<(), Box<dyn Error>> {
     let len = tile8_list.len() as u32;
@@ -54,6 +54,8 @@ pub fn draw_map<P: AsRef<Path>>(path: P, map: Map, width: u8, height: u8, tiles:
     let mut image: RgbaImage = ImageBuffer::new(width as u32 * 16, height as u32 * 16);
 
     let is_glitch = matches!(map, Map::Glitch);
+    let bright_map = BRIGHT_MAPS.contains(&u8::from(map));
+
     for (y, row) in tiles.into_iter().enumerate() {
         for (x, tile) in row.into_iter().enumerate() {
             let mut tile = tile as usize;
@@ -79,10 +81,21 @@ pub fn draw_map<P: AsRef<Path>>(path: P, map: Map, width: u8, height: u8, tiles:
                 }
 
                 if let Some(sprite) = &sprites[y][x] {
-                    match sprite {
-                        Sprite::WindRoute => tile::draw_tile16(tile8_list, &sprite_tile16_list[67], palette::get_sprite_palette(67), &mut image, pixel_x, pixel_y, true),
-                        Sprite::Other(_) => {}
-                    }
+                    let sprite_index = match sprite {
+                        Sprite::Collectible(collectible) => {
+                            let mut index = u8::from(*collectible) + 17;
+                            if matches!(collectible, Collectible::Sword) && bright_map { index += 1 }
+                            index as usize
+                        },
+                        Sprite::WindRoute => 67,
+                        Sprite::Save => 0,
+                        Sprite::Other(_) => usize::MAX,
+                    };
+                    if sprite_index == usize::MAX { continue }
+
+                    let tile16 = &sprite_tile16_list[sprite_index];
+                    let palette = palette::get_sprite_palette(sprite_index);
+                    tile::draw_tile16(tile8_list, tile16, palette, &mut image, pixel_x, pixel_y, true);
                 }
             }
         }
