@@ -2,7 +2,7 @@ use std::ops::{Deref, DerefMut};
 
 use image::{ImageBuffer, Pixel};
 
-use crate::data::TILE_16S;
+use crate::data::{TILE_16S, TILE_BIT_TABLE, TILE_FLIP_TABLE, TILE_BITS, TILE_FLIPS};
 
 #[derive(Default)]
 pub struct Tile8 {
@@ -20,7 +20,34 @@ impl From<u16> for Tile8 {
 
 pub type Tile16 = [Tile8; 4];
 
-pub fn tile16_list() -> Vec<Tile16> {
+fn build_tile(id: usize) -> Tile16 {
+    let bit_index = TILE_BIT_TABLE[id] as usize * 4;
+    let flip_index = TILE_FLIP_TABLE[id] as usize * 12;
+
+    let build_tile_8 = |tile_index| {
+        let by_three = tile_index * 3;
+
+        let index = TILE_BITS[bit_index + tile_index];
+        let flipx = TILE_FLIPS[flip_index + by_three];
+        let flipy = TILE_FLIPS[flip_index + by_three + 1];
+        let rotate = TILE_FLIPS[flip_index + by_three + 2];
+        Tile8 { index, flipx, flipy, rotate }
+    };
+
+    [build_tile_8(0), build_tile_8(1), build_tile_8(2), build_tile_8(3)]
+}
+
+pub fn sprite_tile16_list() -> Vec<Tile16> {
+    let mut tile16_list = Vec::with_capacity(113);
+
+    for index in 0..=113 {
+        tile16_list.push(build_tile(index));
+    }
+
+    tile16_list
+}
+
+pub fn map_tile16_list() -> Vec<Tile16> {
     let mut tile16_list: Vec<Tile16> = TILE_16S.iter().map(|&tile8s|[
         Tile8::from(tile8s[0]),
         Tile8::from(tile8s[1]),
@@ -94,10 +121,10 @@ where
             y += yoffset;
 
             if blend {
-                pixel.blend(image.get_pixel(x, y));
+                image.get_pixel_mut(x, y).blend(&pixel);
+            } else {
+                image.put_pixel(x, y, pixel);
             }
-
-            image.put_pixel(x, y, pixel);
         }
     }
 }

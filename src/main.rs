@@ -5,6 +5,7 @@ mod tile;
 mod palette;
 mod map;
 mod inventory;
+mod sprite;
 mod data;
 
 use std::fmt::Display;

@@ -1,4 +1,4 @@
-use crate::{data::{TILE_PALETTES, PALETTES, MAP_PALETTES, COLOR_TABLE}, map::Map};
+use crate::{data::{MAP_PALETTE_TABLE, PALETTES, MAP_PALETTES, COLOR_TABLE, TILE_PALETTE_TABLE, TILE_PALETTES}, map::Map};
 
 pub const DEFAULT_PALETTE: [image::Rgba<u8>; 4] = [
     image::Rgba([255, 255, 255, 255]),
@@ -12,8 +12,8 @@ fn lookup(color: u8) -> image::Rgba<u8> {
     image::Rgba(COLOR_TABLE[color as usize])
 }
 
-pub fn get_palette(index: usize, map: Map) -> [image::Rgba<u8>; 4] {
-    if let Some(index) = TILE_PALETTES.get(index) {
+pub fn get_map_palette(index: usize, map: Map) -> [image::Rgba<u8>; 4] {
+    if let Some(index) = MAP_PALETTE_TABLE.get(index) {
         let index = *index as usize;
 
         let colors = if matches!(map, Map::SmugglersRoad | Map::SmugglersRuin) {
@@ -24,4 +24,11 @@ pub fn get_palette(index: usize, map: Map) -> [image::Rgba<u8>; 4] {
 
         [lookup(colors[0]), lookup(colors[1]), lookup(colors[2]), lookup(colors[3])]
     } else { DEFAULT_PALETTE }
+}
+
+pub fn get_sprite_palette(index: usize) -> [image::Rgba<u8>; 4] {
+    let index = TILE_PALETTE_TABLE[index] as usize;
+    let colors = TILE_PALETTES[index];
+
+    [lookup(colors[0]), lookup(colors[1]), lookup(colors[2]), lookup(colors[3])]
 }
