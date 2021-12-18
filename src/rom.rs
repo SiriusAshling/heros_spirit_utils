@@ -2,7 +2,7 @@ use std::{path::Path, error::Error, fs};
 
 use crate::{map::Map, tile::{Tile16, self, Tile8Data}, sprite::Sprite, util, draw};
 
-fn decode_graphics<P: AsRef<Path>>(path: P, map_tile16_list: &[Tile16], sprite_tile16_list: &[Tile16]) -> Result<Vec<Tile8Data>, Box<dyn Error>> {
+fn decode_graphics<P: AsRef<Path>>(path: P) -> Result<Vec<Tile8Data>, Box<dyn Error>> {
     let data = fs::read(&path)?;
 
     let mut bits = Vec::new();
@@ -53,12 +53,10 @@ fn decode_graphics<P: AsRef<Path>>(path: P, map_tile16_list: &[Tile16], sprite_t
     path.push("tile16");
     util::ensure_dir(&path)?;
 
-    draw::draw_tile16s(&path, &tile8_list, map_tile16_list, sprite_tile16_list)?;
-
     Ok(tile8_list)
 }
 
-fn decode_map<P: AsRef<Path>>(path: P, tile8_list: &[Tile8Data], map_tile16_list: &[Tile16], sprite_tile16_list: &[Tile16]) -> Result<(), Box<dyn Error>> {
+fn decode_map<P: AsRef<Path>>(path: P, tile8_list: &[Tile8Data], map_tile16_list: &[Tile16], sprite_tile16_list: &[Tile16], enemy_tile16_list: &[Tile16]) -> Result<(), Box<dyn Error>> {
     let data = fs::read(&path)?;
     let map_id = data[0];
     let map = Map::from(map_id);
@@ -125,11 +123,7 @@ fn decode_map<P: AsRef<Path>>(path: P, tile8_list: &[Tile8Data], map_tile16_list
         let x = sprite_data[sprite_index + 1] as usize;
         let y = sprite_data[sprite_index + 2] as usize;
         sprite_index += sprite.data_bytes();
-
-        match &sprite {
-            Sprite::Collectible(_) | Sprite::Door(_) | Sprite::WindRoute | Sprite::Save => sprites[y][x] = Some(sprite),
-            Sprite::Other(_) => {},
-        }
+        sprites[y][x] = Some(sprite);
     }
 
     let display = tiles.iter().map(|row| format!("{:?}", row)).collect::<Vec<_>>().join("\n");
@@ -144,14 +138,15 @@ fn decode_map<P: AsRef<Path>>(path: P, tile8_list: &[Tile8Data], map_tile16_list
     fs::write(&path, display)?;
     path.set_extension("png");
 
-    draw::draw_map(&path, map, width, height, tiles, sprites, tile8_list, map_tile16_list, sprite_tile16_list)
+    draw::draw_map(&path, map, width, height, tiles, sprites, tile8_list, map_tile16_list, sprite_tile16_list, enemy_tile16_list)
 }
 
 pub fn decode<P: AsRef<Path>>(path: P) -> Result<(), Box<dyn Error>> {
-    let rom = fs::read_dir(path)?;
+    let rom = fs::read_dir(&path)?;
 
     let map_tile16_list = tile::map_tile16_list();
     let sprite_tile16_list = tile::sprite_tile16_list();
+    let enemy_tile16_list = tile::enemy_tile16_list();
     let mut tile8_list = None;
     let mut maps = Vec::with_capacity(30);
 
@@ -160,15 +155,23 @@ pub fn decode<P: AsRef<Path>>(path: P) -> Result<(), Box<dyn Error>> {
         let filename = file.file_name();
         let filename = filename.to_string_lossy();
         if filename == "graphics" {
-            tile8_list = Some(decode_graphics(file.path(), &map_tile16_list, &sprite_tile16_list)?);
+            tile8_list = Some(decode_graphics(file.path())?);
         } else if filename.starts_with("map") {
             maps.push(file.path());
         }
     }
 
     if let Some(tile8_list) = tile8_list {
+        let mut path = path.as_ref()
+            .parent().unwrap()
+            .to_owned();
+        path.push("graphics/tile16");
+        util::ensure_dir(&path)?;
+
+        draw::draw_tile16s(&path, &tile8_list, &map_tile16_list, &sprite_tile16_list, &enemy_tile16_list)?;
+
         for map in maps {
-            util::feedback(format!("Decode map {}", map.display()), decode_map(map, &tile8_list, &map_tile16_list, &sprite_tile16_list));
+            util::feedback(format!("Decode map {}", map.display()), decode_map(map, &tile8_list, &map_tile16_list, &sprite_tile16_list, &enemy_tile16_list));
         }
     }
 
