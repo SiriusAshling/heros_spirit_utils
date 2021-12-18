@@ -81,6 +81,7 @@ pub fn draw_map<P: AsRef<Path>>(path: P, map: Map, width: u8, height: u8, tiles:
                 if let Some(sprite) = &sprites[y][x] {
                     match sprite {
                         Sprite::WindRoute => tile::draw_tile16(tile8_list, &sprite_tile16_list[67], palette::get_sprite_palette(67), &mut image, pixel_x, pixel_y, true),
+                        Sprite::Other(_) => {}
                     }
                 }
             }

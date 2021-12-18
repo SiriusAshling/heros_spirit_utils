@@ -1,6 +1,6 @@
 use std::{path::Path, error::Error, fs};
 
-use crate::{map::Map, tile::{Tile16, self, Tile8Data}, sprite::{SpriteType, ThreeByteSpriteType, Sprite}, util, draw};
+use crate::{map::Map, tile::{Tile16, self, Tile8Data}, sprite::Sprite, util, draw};
 
 fn decode_graphics<P: AsRef<Path>>(path: P, map_tile16_list: &[Tile16], sprite_tile16_list: &[Tile16]) -> Result<Vec<Tile8Data>, Box<dyn Error>> {
     let data = fs::read(&path)?;
@@ -121,17 +121,14 @@ fn decode_map<P: AsRef<Path>>(path: P, tile8_list: &[Tile8Data], map_tile16_list
     let mut sprite_index = 0;
     let len = sprite_data.len();
     while sprite_index < len {
-        let sprite_type = SpriteType::from(sprite_data[sprite_index]);
-        match &sprite_type {
-            SpriteType::ThreeBytes(subtype) => {
-                let x = sprite_data[sprite_index + 1] as usize;
-                let y = sprite_data[sprite_index + 2] as usize;
-                match subtype {
-                    ThreeByteSpriteType::WindRoute => sprites[y][x] = Some(Sprite::WindRoute),
-                }
-                sprite_index += 3;
-            },
-            SpriteType::Other(bytes) => sprite_index += bytes,
+        let sprite = Sprite::from(sprite_data[sprite_index]);
+        let x = sprite_data[sprite_index + 1] as usize;
+        let y = sprite_data[sprite_index + 2] as usize;
+        sprite_index += sprite.data_bytes();
+
+        match &sprite {
+            Sprite::WindRoute => sprites[y][x] = Some(Sprite::WindRoute),
+            Sprite::Other(_) => {},
         }
     }
 
