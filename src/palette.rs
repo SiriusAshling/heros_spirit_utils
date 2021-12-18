@@ -19,7 +19,7 @@ pub fn get_map_palette(index: usize, map: Map) -> [image::Rgba<u8>; 4] {
         let colors = if matches!(map, Map::SmugglersRoad | Map::SmugglersRuin) {
             PALETTES[index + 75]
         } else {
-            PALETTES[MAP_PALETTES[u8::from(map) as usize] as usize * 5 + index]
+            PALETTES[MAP_PALETTES[map as usize] as usize * 5 + index]
         };
 
         [lookup(colors[0]), lookup(colors[1]), lookup(colors[2]), lookup(colors[3])]

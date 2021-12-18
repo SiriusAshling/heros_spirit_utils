@@ -1,3 +1,4 @@
+use num_enum::FromPrimitive;
 use serde::{Serialize, Deserialize};
 
 use crate::{inventory::Inventory, map::Map};
@@ -13,25 +14,15 @@ pub struct SaveDat {
     pub label: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, FromPrimitive)]
+#[repr(u8)]
 pub enum Direction {
-    Down,
-    Left,
-    Right,
-    Up,
+    Down = 2,
+    Left = 4,
+    Right = 6,
+    Up = 8,
+    #[num_enum(default)]
     Unknown,
-}
-
-impl From<u8> for Direction {
-    fn from(id: u8) -> Self {
-        match id {
-            2 => Direction::Down,
-            4 => Direction::Left,
-            6 => Direction::Right,
-            8 => Direction::Up,
-            _ => Direction::Unknown,
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize)]

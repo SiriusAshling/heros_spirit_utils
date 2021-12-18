@@ -3,48 +3,23 @@ use std::ops::RangeInclusive;
 #[derive(Debug, Clone, Copy)]
 pub enum Collectible {
     GoldKey,
-    Sword,
     SilverKey,
-    PortalStone,
+    RedKey = 3,
+    GreenKey,
+    BlueKey,
+    Sword,
+    PortalStone = 8,
     Gem,
     Treasure,
-    BlueKey,
-    GreenKey,
+    ShrineKey = 14,
     GoldSword,
-    Heart,
-    RedKey,
-    ShrineKey,
-    Shield,
-    Stopwatch,
+    Heart = 17,
+    Shield = 22,
+    Stopwatch = 24,
     GemHeart,
-    PossumCoin,
-    TealKey,
-    PurpleKey,
-}
-
-impl From<Collectible> for u8 {
-    fn from(collectible: Collectible) -> u8 {
-        match collectible {
-            Collectible::GoldKey => 0,
-            Collectible::Sword => 6,
-            Collectible::SilverKey => 1,
-            Collectible::PortalStone => 8,
-            Collectible::Gem => 9,
-            Collectible::Treasure => 10,
-            Collectible::BlueKey => 5,
-            Collectible::GreenKey => 4,
-            Collectible::GoldSword => 15,
-            Collectible::Heart => 17,
-            Collectible::RedKey => 3,
-            Collectible::ShrineKey => 14,
-            Collectible::Shield => 22,
-            Collectible::Stopwatch => 24,
-            Collectible::GemHeart => 25,
-            Collectible::PossumCoin => 34,
-            Collectible::TealKey => 27,
-            Collectible::PurpleKey => 28,
-        }
-    }
+    TealKey = 27,
+    PurpleKey = 28,
+    PossumCoin = 34,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -57,23 +32,6 @@ pub enum Door {
     Boulder,
     Teal,
     Purple,
-    Ngp,
-}
-
-impl From<Door> for u8 {
-    fn from(door: Door) -> u8 {
-        match door {
-            Door::Gold => 0,
-            Door::Silver => 1,
-            Door::Red => 2,
-            Door::Green => 3,
-            Door::Blue => 4,
-            Door::Boulder => 5,
-            Door::Teal => 6,
-            Door::Purple => 7,
-            Door::Ngp => 8,
-        }
-    }
 }
 
 #[derive(Debug, Clone)]
