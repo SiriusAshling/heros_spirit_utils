@@ -1,7 +1,7 @@
 use num_enum::FromPrimitive;
 use serde::{Serialize, Deserialize};
 
-use crate::{inventory::Inventory, map::Map};
+use crate::{inventory::Inventory, map::MapIdentifier};
 
 #[derive(Serialize, Deserialize)]
 pub struct SaveDat {
@@ -27,7 +27,7 @@ pub enum Direction {
 
 #[derive(Serialize, Deserialize)]
 pub struct Position {
-    pub map: Map,
+    pub map: MapIdentifier,
     pub x: usize,
     pub y: usize,
     pub direction: Direction,

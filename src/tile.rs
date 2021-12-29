@@ -4,6 +4,13 @@ use image::{ImageBuffer, Pixel};
 
 use crate::data::{TILE_16S, SPRITE_TILE_BIT_TABLE, SPRITE_TILE_FLIP_TABLE, SPRITE_TILE_BITS, SPRITE_TILE_FLIPS, ENEMY_TILE_BIT_TABLE, ENEMY_TILE_BITS, ENEMY_TILE_FLIPS};
 
+pub struct TileData {
+    pub tile8_list: Vec<Tile8Data>,
+    pub map_tile16_list: Vec<Tile16>,
+    pub sprite_tile16_list: Vec<Tile16>,
+    pub enemy_tile16_list: Vec<Tile16>
+}
+
 #[derive(Default)]
 pub struct Tile8 {
     pub index: u16,

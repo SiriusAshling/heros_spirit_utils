@@ -1,9 +1,17 @@
 use num_enum::FromPrimitive;
 use serde::{Serialize, Deserialize};
 
+use crate::sprite::Sprite;
+
+pub struct Map {
+    pub identifier: MapIdentifier,
+    pub tiles: Vec<Vec<u8>>,
+    pub sprites: Vec<Vec<Option<Sprite>>>,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, FromPrimitive)]
 #[repr(u8)]
-pub enum Map {
+pub enum MapIdentifier {
     DustShelf = 1,
     ThroneRoom = 2,
     ExplodingThroneRoom = 4,

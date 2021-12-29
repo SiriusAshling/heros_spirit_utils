@@ -4,7 +4,7 @@ use std::fmt::Display;
 use std::path::Path;
 use std::{fs, cmp::min};
 
-use crate::map::Map;
+use crate::map::MapIdentifier;
 use crate::savedata::{Position, Direction};
 
 use crate::inventory::Inventory;
@@ -87,7 +87,7 @@ pub fn decode<P: AsRef<Path> + Display>(path: P) -> Result<(), Box<dyn Error>> {
 
     // position
     let mut position_parts = savedat.position.split('.');
-    let map = Map::from(position_parts.next().ok_or("malformed data")?.parse::<u8>()?);
+    let map = MapIdentifier::from(position_parts.next().ok_or("malformed data")?.parse::<u8>()?);
     let x = position_parts.next().ok_or("malformed data")?.parse()?;
     let y = position_parts.next().ok_or("malformed data")?.parse()?;
     let direction = Direction::from(position_parts.next().ok_or("malformed data")?.parse::<u8>()?);
