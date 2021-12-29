@@ -9,6 +9,7 @@ mod sprite;
 mod data;
 mod draw;
 mod export;
+mod stats;
 mod util;
 
 fn main() {
@@ -17,6 +18,7 @@ fn main() {
     util::feedback("Decode save 3", saves::decode("savedatc"));
 
     util::feedback_and_then("Decode rom", rom::decode("rom~"), |rom| {
+        util::feedback("Gather stats", stats::map_stats("stats", &rom.maps));
         util::feedback("Export graphics", export::export_tilesets("graphics", &rom.tile_data));
 
         util::feedback("Export maps",

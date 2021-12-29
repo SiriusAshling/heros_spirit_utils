@@ -2,7 +2,7 @@ use std::{path::Path, error::Error, fs, fmt::{Display, self}};
 
 use crate::{map::{MapIdentifier, Map}, tile::{self, Tile8Data, TileData}, sprite::Sprite, util};
 
-pub struct ROM {
+pub struct Rom {
     pub tile_data: TileData,
     pub maps: Vec<Map>,
 }
@@ -129,7 +129,7 @@ fn decode_map<P: AsRef<Path>>(path: P) -> Result<Map, Box<dyn Error>> {
     Ok(Map { identifier, tiles, sprites })
 }
 
-pub fn decode<P: AsRef<Path>>(path: P) -> Result<ROM, Box<dyn Error>> {
+pub fn decode<P: AsRef<Path>>(path: P) -> Result<Rom, Box<dyn Error>> {
     let rom = fs::read_dir(&path)?;
 
     let mut tile8_list = None;
@@ -158,5 +158,5 @@ pub fn decode<P: AsRef<Path>>(path: P) -> Result<ROM, Box<dyn Error>> {
         util::feedback_and_then(description, decode_map(map), |map| maps.push(map));
     }
 
-    Ok(ROM { tile_data, maps })
+    Ok(Rom { tile_data, maps })
 }

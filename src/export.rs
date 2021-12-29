@@ -16,7 +16,7 @@ pub fn export_tilesets<P: AsRef<Path>>(path: P, tile_data: &TileData) -> Result<
     path.push("tile16");
     util::ensure_dir(&path)?;
 
-    draw::draw_tile16s(&path, &tile_data)
+    draw::draw_tile16s(&path, tile_data)
 }
 
 pub fn export_map<P: AsRef<Path>>(path: P, map: Map, tile_data: &TileData) -> Result<(), Box<dyn Error>> {
@@ -24,5 +24,5 @@ pub fn export_map<P: AsRef<Path>>(path: P, map: Map, tile_data: &TileData) -> Re
     util::ensure_dir(&path)?;
     path.push(format!("{}_{:?}.png", map.identifier as u8, map.identifier));
 
-    draw::draw_map(&path, map, &tile_data)
+    draw::draw_map(&path, map, tile_data)
 }

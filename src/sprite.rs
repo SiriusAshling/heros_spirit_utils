@@ -1,6 +1,6 @@
 use std::ops::RangeInclusive;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Collectible {
     GoldKey,
     SilverKey,

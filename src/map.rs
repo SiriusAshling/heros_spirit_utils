@@ -9,7 +9,7 @@ pub struct Map {
     pub sprites: Vec<Vec<Option<Sprite>>>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, FromPrimitive)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone, Copy, FromPrimitive)]
 #[repr(u8)]
 pub enum MapIdentifier {
     DustShelf = 1,
