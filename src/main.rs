@@ -1,5 +1,6 @@
 mod saves;
 mod savedata;
+mod global;
 mod rom;
 mod tile;
 mod palette;
@@ -16,6 +17,7 @@ fn main() {
     util::feedback("Decode save 1", saves::decode("savedata"));
     util::feedback("Decode save 2", saves::decode("savedatb"));
     util::feedback("Decode save 3", saves::decode("savedatc"));
+    util::feedback("Decode global save", global::decode());
 
     util::feedback_and_then("Decode rom", rom::decode("rom~"), |rom| {
         util::feedback("Gather stats", stats::map_stats("stats", &rom.maps));
