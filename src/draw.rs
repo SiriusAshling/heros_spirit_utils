@@ -4,7 +4,7 @@ use image::{RgbaImage, ImageFormat, ImageBuffer};
 
 use crate::{tile::{Tile8, self, Tile8Data, TileData}, palette::{DEFAULT_PALETTE, self}, data::{TERRAIN_FLAGS, BRIGHT_MAPS}, sprite::{Sprite, Collectible, Enemy}, map::{MapIdentifier, Map}};
 
-pub fn draw_tile8s<P: AsRef<Path>>(path: P, tile8_list: &[Tile8Data]) -> Result<(), Box<dyn Error>> {
+pub fn draw_tile8s(path: impl AsRef<Path>, tile8_list: &[Tile8Data]) -> Result<(), Box<dyn Error>> {
     let len = tile8_list.len() as u32;
     let width = 80;
     let height = (len + 9) / 10 * 8;
@@ -24,7 +24,7 @@ pub fn draw_tile8s<P: AsRef<Path>>(path: P, tile8_list: &[Tile8Data]) -> Result<
     Ok(())
 }
 
-pub fn draw_tile16s<P: AsRef<Path>>(path: P, tile_data: &TileData) -> Result<(), Box<dyn Error>> {
+pub fn draw_tile16s(path: impl AsRef<Path>, tile_data: &TileData) -> Result<(), Box<dyn Error>> {
     let path = path.as_ref().to_owned();
 
     for (index, tile16) in tile_data.map_tile16_list.iter().enumerate() {

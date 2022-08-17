@@ -1,6 +1,5 @@
 use std::error::Error;
 
-use std::fmt::Display;
 use std::path::Path;
 use std::{fs, cmp::min};
 
@@ -81,7 +80,7 @@ fn unscramble(mut data: String) -> Result<SaveDat, Box<dyn Error>> {
     Ok(serde_json::from_str(second_iteration)?)
 }
 
-pub fn decode<P: AsRef<Path> + Display>(path: P) -> Result<(), Box<dyn Error>> {
+pub fn decode(path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
     let data = fs::read_to_string(&path)?;
     let savedat = unscramble(data)?;
 
@@ -115,8 +114,7 @@ pub fn decode<P: AsRef<Path> + Display>(path: P) -> Result<(), Box<dyn Error>> {
 
     let out = serde_json::to_string_pretty(&pretty)?;
 
-    let mut path = path.to_string();
-    path += ".decoded.json";
+    let path = path.as_ref().with_extension("decoded.json");
     fs::write(&path, out)?;
 
     Ok(())

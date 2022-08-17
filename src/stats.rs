@@ -2,7 +2,7 @@ use std::{collections::{HashMap, HashSet}, path::Path, fs, error::Error};
 
 use crate::{map::Map, sprite::Sprite, util};
 
-pub fn map_stats<P: AsRef<Path>>(path: P, maps: &[Map]) -> Result<(), Box<dyn Error>> {
+pub fn map_stats(path: impl AsRef<Path>, maps: &[Map]) -> Result<(), Box<dyn Error>> {
     let mut sprite_stats = HashMap::new();
 
     for map in maps {

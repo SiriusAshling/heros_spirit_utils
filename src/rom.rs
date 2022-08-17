@@ -18,7 +18,7 @@ impl Display for DecodeError {
 }
 impl Error for DecodeError {}
 
-fn decode_graphics<P: AsRef<Path>>(path: P) -> Result<Vec<Tile8Data>, Box<dyn Error>> {
+fn decode_graphics(path: impl AsRef<Path>) -> Result<Vec<Tile8Data>, Box<dyn Error>> {
     let data = fs::read(&path)?;
 
     let mut bits = Vec::new();
@@ -55,7 +55,7 @@ fn decode_graphics<P: AsRef<Path>>(path: P) -> Result<Vec<Tile8Data>, Box<dyn Er
     Ok(tile8_list)
 }
 
-fn decode_map<P: AsRef<Path>>(path: P) -> Result<Map, Box<dyn Error>> {
+fn decode_map(path: impl AsRef<Path>) -> Result<Map, Box<dyn Error>> {
     let data = fs::read(&path)?;
     let map_id = data[0];
     let width = data[1];
@@ -129,7 +129,7 @@ fn decode_map<P: AsRef<Path>>(path: P) -> Result<Map, Box<dyn Error>> {
     Ok(Map { identifier, tiles, sprites })
 }
 
-pub fn decode<P: AsRef<Path>>(path: P) -> Result<Rom, Box<dyn Error>> {
+pub fn decode(path: impl AsRef<Path>) -> Result<Rom, Box<dyn Error>> {
     let rom = fs::read_dir(&path)?;
 
     let mut tile8_list = None;

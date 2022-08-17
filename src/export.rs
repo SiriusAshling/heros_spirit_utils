@@ -9,7 +9,7 @@ use crate::util;
 use crate::draw;
 use crate::tile::TileData;
 
-pub fn export_tilesets<P: AsRef<Path>>(path: P, tile_data: &TileData) -> Result<(), Box<dyn Error>> {
+pub fn export_tilesets(path: impl AsRef<Path>, tile_data: &TileData) -> Result<(), Box<dyn Error>> {
     let mut path = path.as_ref().to_owned();
     util::ensure_dir(&path)?;
 
@@ -26,7 +26,7 @@ pub fn export_tilesets<P: AsRef<Path>>(path: P, tile_data: &TileData) -> Result<
     draw::draw_tile16s(&path, tile_data)
 }
 
-pub fn export_map<P: AsRef<Path>>(path: P, identifier: MapIdentifier, map: &RgbaImage) -> Result<(), Box<dyn Error>> {
+pub fn export_map(path: impl AsRef<Path>, identifier: MapIdentifier, map: &RgbaImage) -> Result<(), Box<dyn Error>> {
     let mut path = path.as_ref().to_owned();
     util::ensure_dir(&path)?;
     path.push(format!("{}_{:?}.png", identifier as u8, identifier));
