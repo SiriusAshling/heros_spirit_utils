@@ -188,6 +188,17 @@ pub struct Inventory {
     backup_t_secret_tokens: u8,
     fishing_pole: u8,
     fish: u8,
+    ngppp: u8,
+    rawr_1_map: u8,
+    rawr_1_x: u8,
+    rawr_1_y: u8,
+    rawr_2_map: u8,
+    rawr_2_x: u8,
+    rawr_2_y: u8,
+    rawr_3_map: u8,
+    rawr_3_x: u8,
+    rawr_3_y: u8,
+    rawr: u8,
 }
 
 impl From<Vec<u8>> for Inventory {
@@ -380,6 +391,17 @@ impl From<Vec<u8>> for Inventory {
             backup_t_secret_tokens: v.pop().unwrap_or(0),
             fishing_pole: v.pop().unwrap_or(0),
             fish: v.pop().unwrap_or(0),
+            ngppp: v.pop().unwrap_or(0),
+            rawr_1_map: v.pop().unwrap_or(0),
+            rawr_1_x: v.pop().unwrap_or(0),
+            rawr_1_y: v.pop().unwrap_or(0),
+            rawr_2_map: v.pop().unwrap_or(0),
+            rawr_2_x: v.pop().unwrap_or(0),
+            rawr_2_y: v.pop().unwrap_or(0),
+            rawr_3_map: v.pop().unwrap_or(0),
+            rawr_3_x: v.pop().unwrap_or(0),
+            rawr_3_y: v.pop().unwrap_or(0),
+            rawr: v.pop().unwrap_or(0),
         }
     }
 }
