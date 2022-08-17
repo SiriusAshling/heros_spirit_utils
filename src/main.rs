@@ -23,10 +23,24 @@ fn main() {
         util::feedback("Gather stats", stats::map_stats("stats", &rom.maps));
         util::feedback("Export graphics", export::export_tilesets("graphics", &rom.tile_data));
 
-        util::feedback("Export maps",
+        util::feedback_and_then("Draw maps",
             rom.maps.into_iter()
-                .map(|map| export::export_map("maps", map, &rom.tile_data))
-                .collect::<Result<Vec<_>, _>>()
+                .map(|map| {
+                    let identifier = map.identifier;
+                    draw::draw_map(map, &rom.tile_data).map(|map| (identifier, map))
+                })
+                .collect::<Result<Vec<_>, _>>(),
+            |maps| {
+                util::feedback("Export maps",
+                    maps.iter().map(|(identifier, map)|
+                        export::export_map("maps", *identifier, map)
+                    )
+                    .collect::<Result<Vec<_>, _>>()
+                );
+                util::feedback("Export world map",
+                    draw::merge_maps(maps).and_then(|map| export::export_full_map(&map))
+                );
+            }
         );
     });
 }

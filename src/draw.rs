@@ -60,7 +60,7 @@ pub fn draw_tile16s<P: AsRef<Path>>(path: P, tile_data: &TileData) -> Result<(),
     Ok(())
 }
 
-pub fn draw_map<P: AsRef<Path>>(path: P, map: Map, tile_data: &TileData) -> Result<(), Box<dyn Error>> {
+pub fn draw_map(map: Map, tile_data: &TileData) -> Result<RgbaImage, Box<dyn Error>> {
     let width = map.tiles[0].len();
     let height = map.tiles.len();
     let mut image: RgbaImage = ImageBuffer::new(width as u32 * 16, height as u32 * 16);
@@ -170,7 +170,62 @@ pub fn draw_map<P: AsRef<Path>>(path: P, map: Map, tile_data: &TileData) -> Resu
             }
         }
     }
-    image.save_with_format(&path, ImageFormat::Png)?;
 
-    Ok(())
+    Ok(image)
+}
+
+pub fn merge_maps(maps: Vec<(MapIdentifier, RgbaImage)>) -> Result<RgbaImage, Box<dyn Error>> {
+    let mut image = RgbaImage::new(7808, 9008);
+
+    for (identifier, map) in maps {
+        let (x_offset, mut y) = map_offset(identifier);
+
+        for row in map.rows() {
+            let mut x = x_offset;
+            for pixel in row {
+                image.put_pixel(x, y, *pixel);
+                x += 1;
+            }
+            y += 1;
+        }
+    }
+
+    Ok(image)
+}
+
+fn map_offset(identifier: MapIdentifier) -> (u32, u32) {
+    match identifier {
+        MapIdentifier::DustShelf => (640, 3968),
+        MapIdentifier::ThroneRoom => (3840, 6976),
+        MapIdentifier::ExplodingThroneRoom => (2944, 5696),
+        MapIdentifier::CastleRuins => (4224, 5696),
+        MapIdentifier::NorthMundeman => (3712, 1600),
+        MapIdentifier::SouthMundeman => (3712, 2624),
+        MapIdentifier::VerdantCoast => (3712, 3648),
+        MapIdentifier::OtherworldArena => (5760, 4672),
+        MapIdentifier::CastleGrounds => (1664, 3648),
+        MapIdentifier::Sanctuary => (1152, 3968),
+        MapIdentifier::TheTunnels => (2016, 3264),
+        MapIdentifier::Glitch => (3264, 7360),
+        MapIdentifier::Luddershore => (4736, 1600),
+        MapIdentifier::TheTundra => (1664, 1216),
+        MapIdentifier::FrozenShore => (3712, 576),
+        MapIdentifier::HallowGround => (640, 1920),
+        MapIdentifier::SouthernSwamp => (640, 2944),
+        MapIdentifier::DragonsLair => (256, 4096),
+        MapIdentifier::CorruptedCastle => (3264, 8224),
+        MapIdentifier::CastleMonillud => (1664, 5696),
+        MapIdentifier::ThroneRoomConfrontation => (3456, 6976),
+        MapIdentifier::TheUnderworld => (5760, 1600),
+        MapIdentifier::Otherworld => (5760, 3648),
+        MapIdentifier::MoltenCavern => (4736, 0),
+        MapIdentifier::TheDungeons => (1664, 6976),
+        MapIdentifier::ItemShop => (6528, 4672),
+        MapIdentifier::Convergence => (1280, 4480),
+        MapIdentifier::TrialOfReality => (0, 4480),
+        MapIdentifier::HauntedManse => (1280, 1536),
+        MapIdentifier::SmugglersRoad => (6784, 4160),
+        MapIdentifier::SmugglersRuin => (6784, 3648),
+        MapIdentifier::Unknown => (0, 0),
+    }
 }
