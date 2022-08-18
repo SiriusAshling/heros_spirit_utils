@@ -470,7 +470,6 @@ impl Inventory {
             self.ngp,
             self.ngpp,
             self.ngppp,
-            0,
             self.witch_compass,
             self.witch_hammer,
             self.witch_skeleton_key,
