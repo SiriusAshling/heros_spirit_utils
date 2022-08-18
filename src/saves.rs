@@ -114,8 +114,12 @@ pub fn decode(path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
 
     let out = serde_json::to_string_pretty(&pretty)?;
 
-    let path = path.as_ref().with_extension("decoded.json");
+    let mut path = path.as_ref().with_extension("decoded.json");
     fs::write(&path, out)?;
+
+    let completion_column = pretty.inventory.into_completion_column().into_iter().map(|value| value.to_string()).collect::<Vec<_>>().join("\n");
+    path.set_extension("completion");
+    fs::write(&path, completion_column)?;
 
     Ok(())
 }
