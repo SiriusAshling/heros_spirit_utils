@@ -14,6 +14,10 @@ mod stats;
 mod util;
 
 fn main() {
+    util::feedback("Encode save 1", saves::encode("savedata"));
+    util::feedback("Encode save 2", saves::encode("savedatb"));
+    util::feedback("Encode save 3", saves::encode("savedatc"));
+
     util::feedback("Decode save 1", saves::decode("savedata"));
     util::feedback("Decode save 2", saves::decode("savedatb"));
     util::feedback("Decode save 3", saves::decode("savedatc"));

@@ -14,7 +14,7 @@ pub struct SaveDat {
     pub label: String,
 }
 
-#[derive(Serialize, Deserialize, FromPrimitive)]
+#[derive(Serialize, Deserialize, Clone, Copy, FromPrimitive)]
 #[repr(u8)]
 pub enum Direction {
     Down = 2,
@@ -32,9 +32,15 @@ pub struct Position {
     pub y: usize,
     pub direction: Direction,
 }
+impl Position {
+    pub fn encode(&self) -> String {
+        format!("{}.{}.{}.{}", self.map as u8, self.x, self.y, self.direction as u8)
+    }
+}
 
 #[derive(Serialize, Deserialize)]
 pub struct SavePretty {
+    pub steps: usize,
     pub position: Position,
     pub inventory: Inventory,
     pub hearts: Vec<String>,
