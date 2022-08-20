@@ -29,9 +29,10 @@ fn main() {
             util::feedback("Gather stats", stats::map_stats("stats", &rom.maps));
             util::feedback("Export graphics",
                 export::export_tilesets("rom_export/graphics", &rom.tile_data)
-                .and_then(|_| export::export_images("rom_export/graphics", &rom.images)));
-            util::feedback("Export sounds", export::export_audio("rom_export/sounds", &rom.sounds));
-            util::feedback("Export music", export::export_audio("rom_export/music", &rom.music));
+                .and_then(|_| export::export_files("rom_export/graphics", &rom.images, "bmp")));
+            util::feedback("Export sounds", export::export_files("rom_export/sounds", &rom.sounds, "ogg"));
+            util::feedback("Export music", export::export_files("rom_export/music", &rom.music, "ogg"));
+            util::feedback("Export shaders", export::export_files("rom_export/shaders", &rom.shaders, ""));
 
             util::feedback_and_then("Draw maps",
                 rom.maps.into_iter()
