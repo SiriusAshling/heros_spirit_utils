@@ -1,5 +1,6 @@
 use std::error::Error;
-use std::path::Path;
+use std::fs::{self, FileType};
+use std::path::{Path, PathBuf};
 
 use crate::draw;
 use crate::error::SimpleError;
@@ -143,9 +144,21 @@ pub fn encode(path: impl AsRef<Path>) -> Result<Vec<NamedFile>, Box<dyn Error>> 
 
     let path = path.as_ref();
     let mut graphics_path = path.to_owned();
-    graphics_path.push("graphics/tile8/all.bmp");
-    let tile8_list = draw::undraw_tile8s(graphics_path)?;
+    graphics_path.push("graphics");
+    let mut tile8_path = graphics_path.clone();
+    tile8_path.push("tile8/all.bmp");
+    let tile8_list = draw::undraw_tile8s(tile8_path)?;
     files.push(("graphics".to_string(), encode_graphics(tile8_list)));
+
+    for file in fs::read_dir(graphics_path)? {
+        let file = file?;
+        if file.file_type().as_ref().map_or(false, FileType::is_file) {
+            let mut filename = PathBuf::from(file.file_name());
+            filename.set_extension("");
+            let bytes = fs::read(file.path())?;
+            files.push((filename.to_string_lossy().to_string(), bytes))
+        }
+    }
 
     Ok(files)
 }
