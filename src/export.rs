@@ -19,7 +19,7 @@ pub fn export_tilesets(path: impl AsRef<Path>, tile_data: &TileData) -> Result<(
     let mut tile8_path = path.clone();
     tile8_path.push("tile8");
     util::ensure_dir(&tile8_path)?;
-    tile8_path.push("all.png");
+    tile8_path.push("all.bmp");
 
     draw::draw_tile8s(tile8_path, &tile_data.tile8_list)?;
 

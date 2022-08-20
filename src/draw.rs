@@ -2,7 +2,7 @@ use std::{error::Error, path::Path};
 
 use image::{RgbaImage, ImageFormat, ImageBuffer};
 
-use crate::{tile::{Tile8, self, Tile8Data, TileData}, palette::{DEFAULT_PALETTE, self}, data::{TERRAIN_FLAGS, BRIGHT_MAPS}, sprite::{Sprite, Collectible, Enemy}, map::{MapIdentifier, Map}};
+use crate::{tile::{Tile8, self, Tile8Data, TileData}, palette::{DEFAULT_PALETTE, self}, data::{TERRAIN_FLAGS, BRIGHT_MAPS}, sprite::{Sprite, Collectible, Enemy}, map::{MapIdentifier, Map}, error::SimpleError};
 
 const TILE8_ROW_LENGTH: u32 = 16;
 
@@ -21,9 +21,26 @@ pub fn draw_tile8s(path: impl AsRef<Path>, tile8_list: &[Tile8Data]) -> Result<(
         tile::draw_tile8(tile8_list, &tile8, DEFAULT_PALETTE, &mut image, xoffset, yoffset, false);
     }
 
-    image.save_with_format(&path, ImageFormat::Png)?;
+    image.save(path)?;
 
     Ok(())
+}
+
+pub fn undraw_tile8s(path: impl AsRef<Path>) -> Result<Vec<Tile8Data>, Box<dyn Error>> {
+    let image = image::open(path)?;
+    let tile8_list = image.into_rgba8().pixels().collect::<Vec<_>>().chunks(8 * TILE8_ROW_LENGTH as usize).collect::<Vec<_>>().chunks(8).flat_map(|tile8_row| {
+        (0..TILE8_ROW_LENGTH as usize).map(|index|
+            tile8_row.iter().map(|pixel_row|
+                pixel_row[index * 8..(index + 1) * 8].into_iter().map(|pixel|
+                    DEFAULT_PALETTE.iter().enumerate().find_map(|(index, default_pixel)|
+                        if *pixel == default_pixel { Some(index as u8) } else { None }
+                    ).ok_or(SimpleError("Invalid pixel color in tile8s"))
+                ).collect()
+            ).collect()
+        )
+    }).collect::<Result<_, _>>()?;
+
+    Ok(tile8_list)
 }
 
 pub fn draw_tile16s(path: impl AsRef<Path>, tile_data: &TileData) -> Result<(), Box<dyn Error>> {

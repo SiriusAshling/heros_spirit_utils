@@ -11,6 +11,17 @@ pub struct TileData {
     pub enemy_tile16_list: Vec<Tile16>
 }
 
+impl From<Vec<Tile8Data>> for TileData {
+    fn from(tile8_list: Vec<Tile8Data>) -> Self {
+        Self {
+            tile8_list,
+            map_tile16_list: map_tile16_list(),
+            sprite_tile16_list: sprite_tile16_list(),
+            enemy_tile16_list: enemy_tile16_list(),
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct Tile8 {
     pub index: u16,

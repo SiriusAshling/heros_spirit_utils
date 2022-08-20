@@ -1,3 +1,4 @@
+mod error;
 mod zip;
 mod saves;
 mod savedata;
@@ -23,6 +24,10 @@ fn main() {
     util::feedback("Decode save 2", saves::decode("savedatb"));
     util::feedback("Decode save 3", saves::decode("savedatc"));
     util::feedback("Decode global save", global::decode());
+
+    util::feedback_and_then("Encode rom", rom::encode("rom_export"), |files| {
+        util::feedback("Write rom", export::export_files("rom_encoded", &files, ""));
+    });
 
     util::feedback_and_then("Read rom", zip::read_rom("rom"), |files| {
         util::feedback_and_then("Decode rom", rom::decode(files), |rom| {

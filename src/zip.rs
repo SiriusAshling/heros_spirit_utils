@@ -20,3 +20,16 @@ pub fn read_rom(path: impl AsRef<Path>) -> Result<Vec<NamedFile>, Box<dyn Error>
         Ok((file.name().to_owned(), bytes))
     }).collect()
 }
+
+// Aes encryption is not yet supported :(
+// pub fn write_rom(path: impl AsRef<Path>, files: Vec<NamedFile>) -> Result<(), Box<dyn Error>> {
+//    let file = File::create(path)?;
+//    let mut archive = ZipWriter::new(file);
+//
+//    for (filename, bytes) in files {
+//        archive.start_file(filename, FileOptions::default().compression_method(CompressionMethod::Aes))?;
+//        archive.write_all(&bytes)?;
+//    }
+// 
+//     Ok(())
+// }

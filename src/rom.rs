@@ -1,8 +1,10 @@
 use std::error::Error;
-use std::fmt::{self, Display, Debug};
+use std::path::Path;
 
+use crate::draw;
+use crate::error::SimpleError;
 use crate::map::{Map, MapIdentifier};
-use crate::tile::{self, TileData, Tile8Data};
+use crate::tile::{TileData, Tile8Data};
 use crate::sprite::Sprite;
 use crate::zip::NamedFile;
 
@@ -15,24 +17,26 @@ pub struct Rom {
     pub shaders: Vec<NamedFile>,
 }
 
-#[derive(Debug)]
-pub struct SimpleError<D: Display + Debug>(D);
-impl<D: Display + Debug> Display for SimpleError<D> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        Display::fmt(&self.0, f)
-    }
-}
-impl<D: Display + Debug> Error for SimpleError<D> {}
-
 fn decode_graphics(bytes: Vec<u8>) -> Vec<Tile8Data> {
-    bytes.chunks(2).collect::<Vec<_>>().chunks(8).map(|tile8| {
-        tile8.iter().map(|col| {
-            (0..8).map(|index| {
+    bytes.chunks(2).collect::<Vec<_>>().chunks(8).map(|tile8|
+        tile8.iter().map(|col|
+            (0..8).map(|index|
                 (col[0] & 1 << (7 - index) != 0) as u8 +
                 (col[1] & 1 << (7 - index) != 0) as u8 * 2
-            }).collect()
-        }).collect()
-    }).collect()
+            ).collect()
+        ).collect()
+    ).collect()
+}
+
+fn encode_graphics(tile8_list: Vec<Tile8Data>) -> Vec<u8> {
+    tile8_list.into_iter().flat_map(|tile8|
+        tile8.into_iter().flat_map(|col|
+            [
+                (0..8).fold(0, |acc, index| acc | ((col[index] & 1) << (7 - index))),
+                (0..8).fold(0, |acc, index| acc | ((col[index] & 2) >> 1 << (7 - index)))
+            ]
+        )
+    ).collect()
 }
 
 fn decode_map(bytes: Vec<u8>) -> Result<Map, Box<dyn Error>> {
@@ -128,11 +132,20 @@ pub fn decode(files: Vec<(String, Vec<u8>)>) -> Result<Rom, Box<dyn Error>> {
         }
     }
 
-    let tile8_list = tile8_list.ok_or_else(|| SimpleError("Failed to find graphics file in ROM"))?;
-    let map_tile16_list = tile::map_tile16_list();
-    let sprite_tile16_list = tile::sprite_tile16_list();
-    let enemy_tile16_list = tile::enemy_tile16_list();
-    let tile_data = TileData { tile8_list, map_tile16_list, sprite_tile16_list, enemy_tile16_list };
+    let tile8_list = tile8_list.ok_or(SimpleError("Failed to find graphics file in ROM"))?;
+    let tile_data = TileData::from(tile8_list);
 
     Ok(Rom { tile_data, images, maps, sounds, music, shaders })
+}
+
+pub fn encode(path: impl AsRef<Path>) -> Result<Vec<NamedFile>, Box<dyn Error>> {
+    let mut files = Vec::with_capacity(1);
+
+    let path = path.as_ref();
+    let mut graphics_path = path.to_owned();
+    graphics_path.push("graphics/tile8/all.bmp");
+    let tile8_list = draw::undraw_tile8s(graphics_path)?;
+    files.push(("graphics".to_string(), encode_graphics(tile8_list)));
+
+    Ok(files)
 }
