@@ -1,14 +1,11 @@
 use std::error::Error;
 use std::fmt::{self, Display};
 
-use serde::{Serialize, Deserialize};
-
 use crate::map::{Map, MapIdentifier};
 use crate::tile::{self, TileData, Tile8Data};
 use crate::sprite::Sprite;
 use crate::zip::NamedFile;
 
-#[derive(Serialize, Deserialize)]
 pub struct Rom {
     pub tile_data: TileData,
     pub maps: Vec<Map>,
