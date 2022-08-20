@@ -139,25 +139,33 @@ pub fn decode(files: Vec<(String, Vec<u8>)>) -> Result<Rom, Box<dyn Error>> {
     Ok(Rom { tile_data, images, maps, sounds, music, shaders })
 }
 
+fn import_dir(path: impl AsRef<Path>) -> Result<Vec<NamedFile>, Box<dyn Error>> {
+    let files = fs::read_dir(path)?.filter_map(|file| {
+        let file = file.ok()?;
+        if file.file_type().as_ref().map_or(false, FileType::is_file) {
+            let mut filename = PathBuf::from(file.file_name());
+            filename.set_extension("");
+            let bytes = fs::read(file.path()).ok()?;
+            Some((filename.to_string_lossy().to_string(), bytes))
+        } else { None }
+    }).collect();
+
+    Ok(files)
+}
+
 pub fn encode(path: impl AsRef<Path>) -> Result<Vec<NamedFile>, Box<dyn Error>> {
     let mut files = Vec::with_capacity(1);
 
     let path = path.as_ref();
-    let mut graphics_path = path.to_owned();
-    graphics_path.push("graphics");
-    let mut tile8_path = graphics_path.clone();
-    tile8_path.push("tile8/all.bmp");
+    let mut tile8_path = path.to_owned();
+    tile8_path.push("graphics/tile8/all.bmp");
     let tile8_list = draw::undraw_tile8s(tile8_path)?;
     files.push(("graphics".to_string(), encode_graphics(tile8_list)));
 
-    for file in fs::read_dir(graphics_path)? {
-        let file = file?;
-        if file.file_type().as_ref().map_or(false, FileType::is_file) {
-            let mut filename = PathBuf::from(file.file_name());
-            filename.set_extension("");
-            let bytes = fs::read(file.path())?;
-            files.push((filename.to_string_lossy().to_string(), bytes))
-        }
+    for folder in ["graphics", "sounds", "music", "shaders"] {
+        let mut folder_path = path.to_owned();
+        folder_path.push(folder);
+        files.append(&mut import_dir(folder_path)?);
     }
 
     Ok(files)
