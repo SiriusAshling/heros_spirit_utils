@@ -1,4 +1,5 @@
 use std::ops::RangeInclusive;
+use std::cmp::Ordering;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Collectible {
@@ -119,6 +120,17 @@ impl Enemy {
             Enemy::Glitch => 100,
             Enemy::GWitch => 100,
         }
+    }
+}
+
+impl PartialOrd for Enemy {
+    fn partial_cmp(&self, other: &Enemy) -> Option<Ordering> {
+        self.strength().partial_cmp(&other.strength())
+    }
+}
+impl Ord for Enemy {
+    fn cmp(&self, other: &Enemy) -> Ordering {
+        self.strength().cmp(&other.strength())
     }
 }
 

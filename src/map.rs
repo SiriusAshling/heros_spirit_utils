@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use num_enum::FromPrimitive;
 use serde::{Serialize, Deserialize};
 
@@ -45,4 +47,57 @@ pub enum MapIdentifier {
     SmugglersRuin = 41,
     #[num_enum(default)]
     Unknown = u8::MAX,
+}
+
+const MAP_ORDER: [MapIdentifier; 31] = [
+    MapIdentifier::CastleGrounds,
+    MapIdentifier::SouthMundeman,
+    MapIdentifier::TheTunnels,
+    MapIdentifier::SouthernSwamp,
+    MapIdentifier::DustShelf,
+    MapIdentifier::TheTundra,
+    MapIdentifier::HallowGround,
+    MapIdentifier::HauntedManse,
+    MapIdentifier::NorthMundeman,
+    MapIdentifier::MoltenCavern,
+    MapIdentifier::FrozenShore,
+    MapIdentifier::VerdantCoast,
+    MapIdentifier::Luddershore,
+    MapIdentifier::CastleMonillud,
+    MapIdentifier::TheDungeons,
+    MapIdentifier::ItemShop,
+    MapIdentifier::Sanctuary,
+    MapIdentifier::DragonsLair,
+    MapIdentifier::SmugglersRoad,
+    MapIdentifier::SmugglersRuin,
+    MapIdentifier::Otherworld,
+    MapIdentifier::OtherworldArena,
+    MapIdentifier::TheUnderworld,
+    MapIdentifier::Glitch,
+    MapIdentifier::CorruptedCastle,
+    MapIdentifier::ThroneRoom,
+    MapIdentifier::ThroneRoomConfrontation,
+    MapIdentifier::ExplodingThroneRoom,
+    MapIdentifier::CastleRuins,
+    MapIdentifier::Convergence,
+    MapIdentifier::TrialOfReality,
+];
+
+impl MapIdentifier {
+    fn order_index(&self) -> usize {
+        MAP_ORDER.iter().enumerate()
+            .find(|(_, identifier)| self == *identifier)
+            .map_or(usize::MAX, |(index, _)| index)
+    }
+}
+
+impl PartialOrd for MapIdentifier {
+    fn partial_cmp(&self, other: &MapIdentifier) -> Option<Ordering> {
+        self.order_index().partial_cmp(&other.order_index())
+    }
+}
+impl Ord for MapIdentifier {
+    fn cmp(&self, other: &MapIdentifier) -> Ordering {
+        self.order_index().cmp(&other.order_index())
+    }
 }

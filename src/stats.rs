@@ -34,7 +34,10 @@ pub fn map_stats(path: impl AsRef<Path>, maps: &[Map]) -> Result<(), Box<dyn Err
         all_enemies.extend(stats.enemies.keys());
     }
     let mut all_enemies = Vec::from_iter(all_enemies);
-    all_enemies.sort_unstable_by_key(|enemy| enemy.strength());
+    all_enemies.sort_unstable();
+
+    let mut sprite_stats = Vec::from_iter(sprite_stats);
+    sprite_stats.sort_unstable_by_key(|(map, _)| *map);
 
     let collectibles_header = format!(", {}",
         all_collectibles.iter()
