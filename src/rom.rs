@@ -8,6 +8,7 @@ use crate::zip::NamedFile;
 
 pub struct Rom {
     pub tile_data: TileData,
+    pub images: Vec<NamedFile>,
     pub maps: Vec<Map>,
     pub sounds: Vec<NamedFile>,
     pub music: Vec<NamedFile>,
@@ -134,6 +135,7 @@ fn decode_map(bytes: Vec<u8>) -> Result<Map, Box<dyn Error>> {
 
 pub fn decode(files: Vec<(String, Vec<u8>)>) -> Result<Rom, Box<dyn Error>> {
     let mut tile8_list = None;
+    let mut images = Vec::with_capacity(3);
     let mut maps = Vec::with_capacity(41);
     let mut sounds = Vec::with_capacity(39);
     let mut music = Vec::with_capacity(51);
@@ -142,7 +144,8 @@ pub fn decode(files: Vec<(String, Vec<u8>)>) -> Result<Rom, Box<dyn Error>> {
         match &filename[..] {
             "graphics" => tile8_list = Some(decode_graphics(bytes)?),
             f if f.starts_with("map") => maps.push(decode_map(bytes)?),
-            "meow" | "rawr" | "retrofx" | "winter" => { /* ??? */ },
+            "meow" | "rawr" | "winter" => images.push((filename, bytes)),
+            "retrofx" => { /* Some shader file? */ },
             f if f.starts_with("sfx") => sounds.push((filename, bytes)),
             f if f.starts_with("track") => music.push((filename, bytes)),
             _ => eprintln!("Unknown file in rom: {}", filename),
@@ -155,5 +158,5 @@ pub fn decode(files: Vec<(String, Vec<u8>)>) -> Result<Rom, Box<dyn Error>> {
     let enemy_tile16_list = tile::enemy_tile16_list();
     let tile_data = TileData { tile8_list, map_tile16_list, sprite_tile16_list, enemy_tile16_list };
 
-    Ok(Rom { tile_data, maps, sounds, music })
+    Ok(Rom { tile_data, images, maps, sounds, music })
 }

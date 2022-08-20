@@ -27,7 +27,9 @@ fn main() {
     util::feedback_and_then("Read rom", zip::read_rom("rom"), |files| {
         util::feedback_and_then("Decode rom", rom::decode(files), |rom| {
             util::feedback("Gather stats", stats::map_stats("stats", &rom.maps));
-            util::feedback("Export graphics", export::export_tilesets("rom_export/graphics", &rom.tile_data));
+            util::feedback("Export graphics",
+                export::export_tilesets("rom_export/graphics", &rom.tile_data)
+                .and_then(|_| export::export_images("rom_export/graphics", &rom.images)));
             util::feedback("Export sounds", export::export_audio("rom_export/sounds", &rom.sounds));
             util::feedback("Export music", export::export_audio("rom_export/music", &rom.music));
 

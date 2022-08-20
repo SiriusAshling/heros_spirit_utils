@@ -28,14 +28,27 @@ pub fn export_tilesets(path: impl AsRef<Path>, tile_data: &TileData) -> Result<(
     draw::draw_tile16s(&path, tile_data)
 }
 
+pub fn export_images(path: impl AsRef<Path>, files: &[NamedFile]) -> Result<(), Box<dyn Error>> {
+    let path = path.as_ref();
+    util::ensure_dir(&path)?;
+
+    for (name, bytes) in files {
+        let mut image_path = path.to_owned();
+        image_path.push(format!("{}.bmp", name));
+        fs::write(image_path, bytes)?;
+    }
+
+    Ok(())
+}
+
 pub fn export_audio(path: impl AsRef<Path>, files: &[NamedFile]) -> Result<(), Box<dyn Error>> {
     let path = path.as_ref();
     util::ensure_dir(&path)?;
 
     for (name, bytes) in files {
-        let mut sound_path = path.to_owned();
-        sound_path.push(format!("{}.ogg", name));
-        fs::write(sound_path, bytes)?;
+        let mut audio_path = path.to_owned();
+        audio_path.push(format!("{}.ogg", name));
+        fs::write(audio_path, bytes)?;
     }
 
     Ok(())
