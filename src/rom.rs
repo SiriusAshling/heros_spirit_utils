@@ -1,5 +1,5 @@
 use std::error::Error;
-use std::fmt::{self, Display};
+use std::fmt::{self, Display, Debug};
 
 use crate::map::{Map, MapIdentifier};
 use crate::tile::{self, TileData, Tile8Data};
@@ -16,49 +16,23 @@ pub struct Rom {
 }
 
 #[derive(Debug)]
-pub struct DecodeError {
-    description: String,
-}
-impl Display for DecodeError {
+pub struct SimpleError<D: Display + Debug>(D);
+impl<D: Display + Debug> Display for SimpleError<D> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.description)
+        Display::fmt(&self.0, f)
     }
 }
-impl Error for DecodeError {}
+impl<D: Display + Debug> Error for SimpleError<D> {}
 
-fn decode_graphics(bytes: Vec<u8>) -> Result<Vec<Tile8Data>, Box<dyn Error>> {
-    let mut bits = Vec::new();
-    for byte in bytes {
-        for bit_index in 0..8 {
-            let bit = byte & 1 << (7 - bit_index) != 0;
-            bits.push(bit);
-        }
-    }
-
-    let mut tile8_list = Vec::with_capacity(848);
-
-    for index in 0..848 {
-        let texture_bits = &bits[index * 128..(index + 1) * 128];
-
-        let mut pixels = vec![vec![0; 8]; 8];
-        for (x, col) in pixels.iter_mut().enumerate() {
-            for (y, pixel) in col.iter_mut().enumerate() {
-                let mut color = 0u8;
-                let bit_index = x * 16 + y;
-                if texture_bits[bit_index] {
-                    color += 1;
-                }
-                if texture_bits[bit_index + 8] {
-                    color += 2;
-                }
-                *pixel = color;
-            }
-        }
-
-        tile8_list.push(pixels);
-    }
-
-    Ok(tile8_list)
+fn decode_graphics(bytes: Vec<u8>) -> Vec<Tile8Data> {
+    bytes.chunks(2).collect::<Vec<_>>().chunks(8).map(|tile8| {
+        tile8.iter().map(|col| {
+            (0..8).map(|index| {
+                (col[0] & 1 << (7 - index) != 0) as u8 +
+                (col[1] & 1 << (7 - index) != 0) as u8 * 2
+            }).collect()
+        }).collect()
+    }).collect()
 }
 
 fn decode_map(bytes: Vec<u8>) -> Result<Map, Box<dyn Error>> {
@@ -144,7 +118,7 @@ pub fn decode(files: Vec<(String, Vec<u8>)>) -> Result<Rom, Box<dyn Error>> {
 
     for (filename, bytes) in files {
         match &filename[..] {
-            "graphics" => tile8_list = Some(decode_graphics(bytes)?),
+            "graphics" => tile8_list = Some(decode_graphics(bytes)),
             f if f.starts_with("map") => maps.push(decode_map(bytes)?),
             "meow" | "rawr" | "winter" => images.push((filename, bytes)),
             "retrofx" => shaders.push((filename, bytes)),
@@ -154,7 +128,7 @@ pub fn decode(files: Vec<(String, Vec<u8>)>) -> Result<Rom, Box<dyn Error>> {
         }
     }
 
-    let tile8_list = tile8_list.ok_or_else(|| DecodeError { description: String::from("Failed to find graphics file in ROM") })?;
+    let tile8_list = tile8_list.ok_or_else(|| SimpleError("Failed to find graphics file in ROM"))?;
     let map_tile16_list = tile::map_tile16_list();
     let sprite_tile16_list = tile::sprite_tile16_list();
     let enemy_tile16_list = tile::enemy_tile16_list();
