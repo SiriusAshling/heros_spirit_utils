@@ -34,7 +34,7 @@ pub enum Door {
     Purple,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Enemy {
     Guard = 0,
     BSlime = 1,
@@ -63,8 +63,7 @@ pub enum Enemy {
     FairyR = 24,
     FairyG = 25,
     FairyB = 26,
-    // GDragon,
-    Dragon = 27,
+    GDragon = 27,
     // BDragon,
     Basilisk = 29,
     CloneP = 30,
@@ -79,6 +78,48 @@ pub enum Enemy {
     // Ragnarok = 43,
     // EvilBunny = 44,
     // DarkGhost = 45,
+}
+
+impl Enemy {
+    pub fn strength(self) -> u8 {
+        match self {
+            Enemy::Guard => 50,
+            Enemy::BSlime => 5,
+            Enemy::Bat => 10,
+            Enemy::YBat => 55,
+            Enemy::Fireball => 100,
+            Enemy::PFireball => 100,
+            Enemy::Gargoyle => 80,
+            Enemy::Ghost => 100,
+            Enemy::SGuard => 100,
+            Enemy::Pirate => 35,
+            Enemy::Rat => 25,
+            Enemy::GRat => 70,
+            Enemy::Skeleton => 20,
+            Enemy::DSkeleton => 45,
+            Enemy::GSkeleton => 75,
+            Enemy::PSlime => 65,
+            Enemy::GSlime => 15,
+            Enemy::RSlime => 50,
+            Enemy::YSlime => 30,
+            Enemy::Spider => 15,
+            Enemy::WSpider => 65,
+            Enemy::Whelp => 60,
+            Enemy::BWhelp => 90,
+            Enemy::GWhelp => 40,
+            Enemy::FairyR => 95,
+            Enemy::FairyG => 95,
+            Enemy::FairyB => 95,
+            Enemy::GDragon => 75,
+            Enemy::Basilisk => 95,
+            Enemy::CloneP => 10,
+            Enemy::CloneW => 10,
+            Enemy::Witch => 0,
+            Enemy::Rabbit => 1,
+            Enemy::Glitch => 100,
+            Enemy::GWitch => 100,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -136,7 +177,7 @@ impl From<u8> for Sprite {
             110 | 111 => Sprite::Enemy(Enemy::YBat),
             112 => Sprite::Enemy(Enemy::CloneW),
             113 => Sprite::Enemy(Enemy::CloneP),
-            114 => Sprite::Enemy(Enemy::Dragon),
+            114 => Sprite::Enemy(Enemy::GDragon),
             115 => Sprite::Enemy(Enemy::Fireball),
             116 => Sprite::Enemy(Enemy::PFireball),
             117 => Sprite::Enemy(Enemy::Gargoyle),

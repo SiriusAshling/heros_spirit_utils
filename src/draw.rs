@@ -103,7 +103,7 @@ pub fn draw_map(map: Map, tile_data: &TileData) -> Result<RgbaImage, Box<dyn Err
 
                 if let Sprite::Enemy(enemy) = sprite {
                     let sprite_index = match enemy {
-                        Enemy::Dragon => {
+                        Enemy::GDragon => {
                             let palette = match map.identifier {
                                 MapIdentifier::CastleMonillud => palette::lookup_palette([11, 9, 25, 64]),
                                 MapIdentifier::TheUnderworld => palette::lookup_palette([7, 22, 23, 64]),
