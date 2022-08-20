@@ -4,15 +4,17 @@ use image::{RgbaImage, ImageFormat, ImageBuffer};
 
 use crate::{tile::{Tile8, self, Tile8Data, TileData}, palette::{DEFAULT_PALETTE, self}, data::{TERRAIN_FLAGS, BRIGHT_MAPS}, sprite::{Sprite, Collectible, Enemy}, map::{MapIdentifier, Map}};
 
+const TILE8_ROW_LENGTH: u32 = 16;
+
 pub fn draw_tile8s(path: impl AsRef<Path>, tile8_list: &[Tile8Data]) -> Result<(), Box<dyn Error>> {
     let len = tile8_list.len() as u32;
-    let width = 80;
-    let height = (len + 9) / 10 * 8;
+    let width = TILE8_ROW_LENGTH * 8;
+    let height = (len + 9) / TILE8_ROW_LENGTH * 8;
     let mut image: RgbaImage = ImageBuffer::new(width, height);
 
     for index in 0..len {
-        let xoffset = index % 10 * 8;
-        let yoffset = index / 10 * 8;
+        let xoffset = index % TILE8_ROW_LENGTH * 8;
+        let yoffset = index / TILE8_ROW_LENGTH * 8;
 
         let tile8 = Tile8 { index: index as u16, ..Tile8::default() };
 
