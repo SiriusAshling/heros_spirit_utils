@@ -1,19 +1,19 @@
 use std::error::Error;
 use std::fmt::{self, Display};
-use std::collections::HashMap;
 
 use serde::{Serialize, Deserialize};
 
 use crate::map::{Map, MapIdentifier};
 use crate::tile::{self, TileData, Tile8Data};
 use crate::sprite::Sprite;
+use crate::zip::NamedFile;
 
 #[derive(Serialize, Deserialize)]
 pub struct Rom {
     pub tile_data: TileData,
     pub maps: Vec<Map>,
-    pub sounds: Vec<Vec<u8>>,
-    pub music: Vec<Vec<u8>>,
+    pub sounds: Vec<NamedFile>,
+    pub music: Vec<NamedFile>,
 }
 
 #[derive(Debug)]
@@ -135,7 +135,7 @@ fn decode_map(bytes: Vec<u8>) -> Result<Map, Box<dyn Error>> {
     Ok(Map { identifier, tiles, sprites })
 }
 
-pub fn decode(files: HashMap<String, Vec<u8>>) -> Result<Rom, Box<dyn Error>> {
+pub fn decode(files: Vec<(String, Vec<u8>)>) -> Result<Rom, Box<dyn Error>> {
     let mut tile8_list = None;
     let mut maps = Vec::with_capacity(41);
     let mut sounds = Vec::with_capacity(39);
@@ -146,8 +146,8 @@ pub fn decode(files: HashMap<String, Vec<u8>>) -> Result<Rom, Box<dyn Error>> {
             "graphics" => tile8_list = Some(decode_graphics(bytes)?),
             f if f.starts_with("map") => maps.push(decode_map(bytes)?),
             "meow" | "rawr" | "retrofx" | "winter" => { /* ??? */ },
-            f if f.starts_with("sfx") => sounds.push(bytes),
-            f if f.starts_with("track") => music.push(bytes),
+            f if f.starts_with("sfx") => sounds.push((filename, bytes)),
+            f if f.starts_with("track") => music.push((filename, bytes)),
             _ => eprintln!("Unknown file in rom: {}", filename),
         }
     }

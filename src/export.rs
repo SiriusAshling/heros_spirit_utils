@@ -1,4 +1,5 @@
 use std::path::{Path, PathBuf};
+use std::fs;
 use std::error::Error;
 
 use image::ImageFormat;
@@ -8,6 +9,7 @@ use crate::map::MapIdentifier;
 use crate::util;
 use crate::draw;
 use crate::tile::TileData;
+use crate::zip::NamedFile;
 
 pub fn export_tilesets(path: impl AsRef<Path>, tile_data: &TileData) -> Result<(), Box<dyn Error>> {
     let mut path = path.as_ref().to_owned();
@@ -24,6 +26,19 @@ pub fn export_tilesets(path: impl AsRef<Path>, tile_data: &TileData) -> Result<(
     util::ensure_dir(&path)?;
 
     draw::draw_tile16s(&path, tile_data)
+}
+
+pub fn export_audio(path: impl AsRef<Path>, files: &[NamedFile]) -> Result<(), Box<dyn Error>> {
+    let path = path.as_ref();
+    util::ensure_dir(&path)?;
+
+    for (name, bytes) in files {
+        let mut sound_path = path.to_owned();
+        sound_path.push(format!("{}.ogg", name));
+        fs::write(sound_path, bytes)?;
+    }
+
+    Ok(())
 }
 
 pub fn export_map(path: impl AsRef<Path>, identifier: MapIdentifier, map: &RgbaImage) -> Result<(), Box<dyn Error>> {

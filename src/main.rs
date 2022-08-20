@@ -28,6 +28,8 @@ fn main() {
         util::feedback_and_then("Decode rom", rom::decode(files), |rom| {
             util::feedback("Gather stats", stats::map_stats("stats", &rom.maps));
             util::feedback("Export graphics", export::export_tilesets("graphics", &rom.tile_data));
+            util::feedback("Export sounds", export::export_audio("sounds", &rom.sounds));
+            util::feedback("Export music", export::export_audio("music", &rom.music));
 
             util::feedback_and_then("Draw maps",
                 rom.maps.into_iter()
