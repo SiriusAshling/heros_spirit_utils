@@ -5,6 +5,7 @@ use serde::{Serialize, Deserialize};
 
 use crate::sprite::Sprite;
 
+#[derive(Serialize, Deserialize)]
 pub struct Map {
     pub identifier: MapIdentifier,
     pub tiles: Vec<Vec<u8>>,

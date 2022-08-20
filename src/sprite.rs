@@ -1,7 +1,9 @@
 use std::ops::RangeInclusive;
 use std::cmp::Ordering;
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+use serde::{Serialize, Deserialize};
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Collectible {
     GoldKey,
     SilverKey,
@@ -23,7 +25,7 @@ pub enum Collectible {
     PossumCoin = 34,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 pub enum Door {
     Gold,
     Silver,
@@ -35,7 +37,7 @@ pub enum Door {
     Purple,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Enemy {
     Guard = 0,
     BSlime = 1,
@@ -134,7 +136,7 @@ impl Ord for Enemy {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Sprite {
     Collectible(Collectible),
     Door(Door),

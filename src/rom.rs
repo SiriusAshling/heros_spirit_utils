@@ -1,10 +1,19 @@
-use std::{path::Path, error::Error, fs, fmt::{Display, self}};
+use std::error::Error;
+use std::fmt::{self, Display};
+use std::collections::HashMap;
 
-use crate::{map::{MapIdentifier, Map}, tile::{self, Tile8Data, TileData}, sprite::Sprite, util};
+use serde::{Serialize, Deserialize};
 
+use crate::map::{Map, MapIdentifier};
+use crate::tile::{self, TileData, Tile8Data};
+use crate::sprite::Sprite;
+
+#[derive(Serialize, Deserialize)]
 pub struct Rom {
     pub tile_data: TileData,
     pub maps: Vec<Map>,
+    pub sounds: Vec<Vec<u8>>,
+    pub music: Vec<Vec<u8>>,
 }
 
 #[derive(Debug)]
@@ -18,11 +27,9 @@ impl Display for DecodeError {
 }
 impl Error for DecodeError {}
 
-fn decode_graphics(path: impl AsRef<Path>) -> Result<Vec<Tile8Data>, Box<dyn Error>> {
-    let data = fs::read(&path)?;
-
+fn decode_graphics(bytes: Vec<u8>) -> Result<Vec<Tile8Data>, Box<dyn Error>> {
     let mut bits = Vec::new();
-    for byte in data {
+    for byte in bytes {
         for bit_index in 0..8 {
             let bit = byte & 1 << (7 - bit_index) != 0;
             bits.push(bit);
@@ -55,17 +62,16 @@ fn decode_graphics(path: impl AsRef<Path>) -> Result<Vec<Tile8Data>, Box<dyn Err
     Ok(tile8_list)
 }
 
-fn decode_map(path: impl AsRef<Path>) -> Result<Map, Box<dyn Error>> {
-    let data = fs::read(&path)?;
-    let map_id = data[0];
-    let width = data[1];
+fn decode_map(bytes: Vec<u8>) -> Result<Map, Box<dyn Error>> {
+    let map_id = bytes[0];
+    let width = bytes[1];
     let width_usize = width as usize;
-    let height = data[2];
+    let height = bytes[2];
     let height_usize = height as usize;
 
     let tiles_end = 3 + width_usize * height_usize * 7 / 8;
-    let tile_bytes = &data[3..tiles_end];
-    let sprite_data = &data[tiles_end..];
+    let tile_bytes = &bytes[3..tiles_end];
+    let sprite_data = &bytes[tiles_end..];
 
     let tile_bytes_len = tile_bytes.len();
     let mut tile_bits = Vec::with_capacity(tile_bytes_len * 8);
@@ -129,20 +135,20 @@ fn decode_map(path: impl AsRef<Path>) -> Result<Map, Box<dyn Error>> {
     Ok(Map { identifier, tiles, sprites })
 }
 
-pub fn decode(path: impl AsRef<Path>) -> Result<Rom, Box<dyn Error>> {
-    let rom = fs::read_dir(&path)?;
-
+pub fn decode(files: HashMap<String, Vec<u8>>) -> Result<Rom, Box<dyn Error>> {
     let mut tile8_list = None;
-    let mut map_files = Vec::with_capacity(30);
+    let mut maps = Vec::with_capacity(41);
+    let mut sounds = Vec::with_capacity(39);
+    let mut music = Vec::with_capacity(51);
 
-    for file in rom {
-        let file = file?;
-        let filename = file.file_name();
-        let filename = filename.to_string_lossy();
-        if filename == "graphics" {
-            tile8_list = Some(decode_graphics(file.path())?);
-        } else if filename.starts_with("map") {
-            map_files.push(file.path());
+    for (filename, bytes) in files {
+        match &filename[..] {
+            "graphics" => tile8_list = Some(decode_graphics(bytes)?),
+            f if f.starts_with("map") => maps.push(decode_map(bytes)?),
+            "meow" | "rawr" | "retrofx" | "winter" => { /* ??? */ },
+            f if f.starts_with("sfx") => sounds.push(bytes),
+            f if f.starts_with("track") => music.push(bytes),
+            _ => eprintln!("Unknown file in rom: {}", filename),
         }
     }
 
@@ -152,11 +158,5 @@ pub fn decode(path: impl AsRef<Path>) -> Result<Rom, Box<dyn Error>> {
     let enemy_tile16_list = tile::enemy_tile16_list();
     let tile_data = TileData { tile8_list, map_tile16_list, sprite_tile16_list, enemy_tile16_list };
 
-    let mut maps = Vec::with_capacity(map_files.len());
-    for map in map_files {
-        let description = format!("Decode map {}", map.display());
-        util::feedback_and_then(description, decode_map(map), |map| maps.push(map));
-    }
-
-    Ok(Rom { tile_data, maps })
+    Ok(Rom { tile_data, maps, sounds, music })
 }
