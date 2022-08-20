@@ -52,7 +52,7 @@ pub fn export_map(path: impl AsRef<Path>, identifier: MapIdentifier, map: &RgbaI
 }
 
 pub fn export_full_map(map: &RgbaImage) -> Result<(), Box<dyn Error>> {
-    let mut path = PathBuf::from("maps");
+    let mut path = PathBuf::from("rom_export/maps");
     util::ensure_dir(&path)?;
     path.push("FullMap.png");
 

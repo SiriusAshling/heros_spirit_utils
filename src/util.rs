@@ -18,5 +18,5 @@ pub fn feedback_and_then<T>(description: impl Display, result: Result<T, impl Di
 }
 
 pub fn ensure_dir(path: impl AsRef<Path>) -> io::Result<()> {
-    fs::create_dir(path).or_else(|err| if matches!(err.kind(), ErrorKind::AlreadyExists) { Ok(()) } else { Err(err) })
+    fs::create_dir_all(path).or_else(|err| if matches!(err.kind(), ErrorKind::AlreadyExists) { Ok(()) } else { Err(err) })
 }
