@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::fmt::{self, Display};
 
 use num_enum::FromPrimitive;
 use serde::{Serialize, Deserialize};
@@ -9,6 +10,26 @@ pub struct Map {
     pub identifier: MapIdentifier,
     pub tiles: Vec<Vec<u8>>,
     pub sprites: Vec<Vec<Option<Sprite>>>,
+}
+
+impl Display for Map {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "{:?}", self.identifier)?;
+        writeln!(f)?;
+        for row in &self.tiles {
+            writeln!(f, "{}", row.iter().map(|b| format!("{:02}", b)).collect::<Vec<_>>().join(", "))?;
+        }
+        writeln!(f)?;
+        for row in &self.sprites {
+            let row = row.iter().map(|sprite| match sprite {
+                Some(sprite) => format!("{:12}", sprite.to_string()),
+                None => "None        ".to_string(),
+            }).collect::<Vec<_>>().join(", ");
+
+            writeln!(f, "{}", row)?;
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone, Copy, FromPrimitive)]

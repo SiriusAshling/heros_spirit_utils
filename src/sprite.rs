@@ -1,3 +1,4 @@
+use std::fmt::{self, Display};
 use std::ops::RangeInclusive;
 use std::cmp::Ordering;
 
@@ -149,6 +150,19 @@ impl Sprite {
         match self {
             Sprite::Collectible(_) | Sprite::Door(_) | Sprite::Enemy(_) | Sprite::WindRoute | Sprite::Save => 3,
             Sprite::Other(bytes) => *bytes,
+        }
+    }
+}
+
+impl Display for Sprite {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Sprite::Collectible(collectible) => write!(f, "{:?}", collectible),
+            Sprite::Door(door) => write!(f, "{:?} Door", door),
+            Sprite::Enemy(enemy) => write!(f, "{:?}", enemy),
+            Sprite::WindRoute => write!(f, "WindRoute"),
+            Sprite::Save => write!(f, "Save"),
+            Sprite::Other(usize) => write!(f, "{}", usize),
         }
     }
 }

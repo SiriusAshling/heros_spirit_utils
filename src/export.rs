@@ -6,7 +6,7 @@ use std::error::Error;
 use image::ImageFormat;
 use image::RgbaImage;
 
-use crate::map::MapIdentifier;
+use crate::map::{MapIdentifier, Map};
 use crate::util;
 use crate::draw;
 use crate::tile::TileData;
@@ -43,7 +43,19 @@ pub fn export_files(path: impl AsRef<Path>, files: &[NamedFile], extension: impl
     Ok(())
 }
 
-pub fn export_map(path: impl AsRef<Path>, identifier: MapIdentifier, map: &RgbaImage) -> Result<(), Box<dyn Error>> {
+pub fn export_maps(path: impl AsRef<Path>, maps: &[Map]) -> Result<(), Box<dyn Error>> {
+    for map in maps {
+        let mut path = path.as_ref().to_owned();
+        util::ensure_dir(&path)?;
+        path.push(format!("{}_{:?}.txt", map.identifier as u8, map.identifier));
+
+        fs::write(path, map.to_string())?;
+    }
+
+    Ok(())
+}
+
+pub fn export_map_image(path: impl AsRef<Path>, identifier: MapIdentifier, map: &RgbaImage) -> Result<(), Box<dyn Error>> {
     let mut path = path.as_ref().to_owned();
     util::ensure_dir(&path)?;
     path.push(format!("{}_{:?}.png", identifier as u8, identifier));
@@ -53,8 +65,8 @@ pub fn export_map(path: impl AsRef<Path>, identifier: MapIdentifier, map: &RgbaI
     Ok(())
 }
 
-pub fn export_full_map(map: &RgbaImage) -> Result<(), Box<dyn Error>> {
-    let mut path = PathBuf::from("rom_export/maps");
+pub fn export_full_map_image(map: &RgbaImage) -> Result<(), Box<dyn Error>> {
+    let mut path = PathBuf::from("rom_export/maps/images");
     util::ensure_dir(&path)?;
     path.push("FullMap.png");
 

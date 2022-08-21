@@ -38,6 +38,7 @@ fn main() {
             util::feedback("Export sounds", export::export_files("rom_export/sounds", &rom.sounds, "ogg"));
             util::feedback("Export music", export::export_files("rom_export/music", &rom.music, "ogg"));
             util::feedback("Export shaders", export::export_files("rom_export/shaders", &rom.shaders, ""));
+            util::feedback("Export maps", export::export_maps("rom_export/maps", &rom.maps));
 
             util::feedback_and_then("Draw maps",
                 rom.maps.into_iter()
@@ -49,12 +50,12 @@ fn main() {
                 |maps| {
                     util::feedback("Export maps",
                         maps.iter().map(|(identifier, map)|
-                            export::export_map("rom_export/maps", *identifier, map)
+                            export::export_map_image("rom_export/maps/images", *identifier, map)
                         )
                         .collect::<Result<Vec<_>, _>>()
                     );
                     util::feedback("Export world map",
-                        draw::merge_maps(maps).and_then(|map| export::export_full_map(&map))
+                        draw::merge_maps(maps).and_then(|map| export::export_full_map_image(&map))
                     );
                 }
             );
