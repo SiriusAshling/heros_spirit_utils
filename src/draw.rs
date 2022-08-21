@@ -117,6 +117,8 @@ pub fn draw_map(map: Map, tile_data: &TileData) -> Result<RgbaImage, Box<dyn Err
     for (y, row) in map.sprites.into_iter().enumerate() {
         for (x, sprite) in row.into_iter().enumerate() {
             if let Some(sprite) = sprite {
+                let sprite = Sprite::from(sprite.kind);
+
                 let pixel_x = x as u32 * 16;
                 let pixel_y = y as u32 * 16;
 

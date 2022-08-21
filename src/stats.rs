@@ -3,9 +3,9 @@ use std::{collections::{HashMap, HashSet}, path::Path, fs, error::Error};
 use crate::{map::Map, sprite::{Sprite, Collectible, Enemy}, util};
 
 #[derive(Default)]
-struct SpriteStats<'a> {
-    collectibles: HashMap<&'a Collectible, u8>,
-    enemies: HashMap<&'a Enemy, u8>,
+struct SpriteStats {
+    collectibles: HashMap<Collectible, u8>,
+    enemies: HashMap<Enemy, u8>,
 }
 
 pub fn map_stats(path: impl AsRef<Path>, maps: &[Map]) -> Result<(), Box<dyn Error>> {
@@ -15,7 +15,7 @@ pub fn map_stats(path: impl AsRef<Path>, maps: &[Map]) -> Result<(), Box<dyn Err
         for row in &map.sprites {
             for sprite in row {
                 if let Some(sprite) = sprite {
-                    match sprite {
+                    match Sprite::from(sprite.kind) {
                         Sprite::Collectible(collectible) =>
                             *sprite_stats.entry(map.identifier).or_insert_with(SpriteStats::default).collectibles.entry(collectible).or_insert(0u8) += 1,
                         Sprite::Enemy(enemy) =>
@@ -27,8 +27,8 @@ pub fn map_stats(path: impl AsRef<Path>, maps: &[Map]) -> Result<(), Box<dyn Err
         }
     }
 
-    let mut all_collectibles = HashSet::<&Collectible>::new();
-    let mut all_enemies = HashSet::<&Enemy>::new();
+    let mut all_collectibles = HashSet::<Collectible>::new();
+    let mut all_enemies = HashSet::<Enemy>::new();
     for stats in sprite_stats.values() {
         all_collectibles.extend(stats.collectibles.keys());
         all_enemies.extend(stats.enemies.keys());

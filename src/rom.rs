@@ -6,7 +6,7 @@ use crate::draw;
 use crate::error::SimpleError;
 use crate::map::{Map, MapIdentifier};
 use crate::tile::{TileData, Tile8Data};
-use crate::sprite::Sprite;
+use crate::sprite::SpriteData;
 use crate::zip::NamedFile;
 
 pub struct Rom {
@@ -51,8 +51,7 @@ fn decode_map(bytes: Vec<u8>) -> Result<Map, Box<dyn Error>> {
     let tile_bytes = &bytes[3..tiles_end];
     let sprite_data = &bytes[tiles_end..];
 
-    let tile_bytes_len = tile_bytes.len();
-    let mut tile_bits = Vec::with_capacity(tile_bytes_len * 8);
+    let mut tile_bits = Vec::with_capacity(tile_bytes.len() * 8);
 
     for (index, byte) in tile_bytes.iter().enumerate() {
         let mut bits = Vec::with_capacity(8);
@@ -101,16 +100,55 @@ fn decode_map(bytes: Vec<u8>) -> Result<Map, Box<dyn Error>> {
     let mut sprite_index = 0;
     let len = sprite_data.len();
     while sprite_index < len {
-        let sprite = Sprite::from(sprite_data[sprite_index]);
-        let x = sprite_data[sprite_index + 1] as usize;
-        let y = sprite_data[sprite_index + 2] as usize;
-        sprite_index += sprite.data_bytes();
-        sprites[y][x] = Some(sprite);
+        let (x, y, sprite) = SpriteData::read(sprite_data, &mut sprite_index)?;
+        sprites[y as usize][x as usize] = Some(sprite);
     }
 
     let identifier = MapIdentifier::from(map_id);
 
     Ok(Map { identifier, tiles, sprites })
+}
+
+fn encode_map(map: Map) -> Vec<u8> {
+    let mut bytes = Vec::with_capacity(0);
+
+    bytes.push(map.identifier as u8);
+    let width = map.tiles[0].len();
+    let height = map.tiles.len();
+    bytes.push(width as u8);
+    bytes.push(height as u8);
+
+    bytes.extend(
+        map.tiles.into_iter().flat_map(|row|
+            row.into_iter().flat_map(|tile|
+                (0..7).map(move |index| tile & (1 << (6 - index)) != 0)
+            )
+        ).collect::<Vec<_>>().chunks(8).enumerate().map(|(index, bits)| {
+            let mut byte = 0;
+            let mut bits = bits.to_vec();
+            while bits.len() < 8 {
+                bits.push(false);
+            }
+
+            for bit_index in (0..8).rev() {
+                let position = (10963 * map.identifier as usize + index * 8) % (1 + bit_index);
+                byte |= (bits.remove(position) as u8) << bit_index;
+            }
+            byte
+        })
+    );
+
+    bytes.extend(
+        map.sprites.into_iter().enumerate().flat_map(|(y, row)|
+            row.into_iter().enumerate().filter_map(move |(x, sprite)| sprite.map(|sprite| (x, y, sprite)))
+        ).flat_map(|(x, y, sprite)| {
+            let mut bytes = vec![sprite.kind, x as u8, y as u8];
+            bytes.extend(sprite.extra_bytes);
+            bytes
+        })
+    );
+
+    bytes
 }
 
 pub fn decode(files: Vec<(String, Vec<u8>)>) -> Result<Rom, Box<dyn Error>> {
@@ -166,6 +204,13 @@ pub fn encode(path: impl AsRef<Path>) -> Result<Vec<NamedFile>, Box<dyn Error>> 
         let mut folder_path = path.to_owned();
         folder_path.push(folder);
         files.append(&mut import_dir(folder_path)?);
+    }
+
+    let mut maps_path = path.to_owned();
+    maps_path.push("maps");
+    for (_, bytes) in import_dir(maps_path)? {
+        let map: Map = String::from_utf8(bytes)?.parse()?;
+        files.push((format!("map{:02}", map.identifier as u8), encode_map(map)));
     }
 
     Ok(files)

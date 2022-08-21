@@ -1,8 +1,14 @@
+use std::error::Error;
 use std::fmt::{self, Display};
 use std::ops::RangeInclusive;
 use std::cmp::Ordering;
+use std::str::FromStr;
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+use enum_utils::FromStr;
+
+use crate::error::SimpleError;
+
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, FromStr)]
 pub enum Collectible {
     GoldKey,
     SilverKey,
@@ -24,7 +30,7 @@ pub enum Collectible {
     PossumCoin = 34,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, FromStr)]
 pub enum Door {
     Gold,
     Silver,
@@ -36,7 +42,7 @@ pub enum Door {
     Purple,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, FromStr)]
 pub enum Enemy {
     Guard = 0,
     BSlime = 1,
@@ -135,36 +141,10 @@ impl Ord for Enemy {
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum Sprite {
-    Collectible(Collectible),
-    Door(Door),
-    Enemy(Enemy),
-    WindRoute,
-    Save,
-    Other(usize),
-}
-
-impl Sprite {
-    pub fn data_bytes(&self) -> usize {
-        match self {
-            Sprite::Collectible(_) | Sprite::Door(_) | Sprite::Enemy(_) | Sprite::WindRoute | Sprite::Save => 3,
-            Sprite::Other(bytes) => *bytes,
-        }
-    }
-}
-
-impl Display for Sprite {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Sprite::Collectible(collectible) => write!(f, "{:?}", collectible),
-            Sprite::Door(door) => write!(f, "{:?} Door", door),
-            Sprite::Enemy(enemy) => write!(f, "{:?}", enemy),
-            Sprite::WindRoute => write!(f, "WindRoute"),
-            Sprite::Save => write!(f, "Save"),
-            Sprite::Other(usize) => write!(f, "{}", usize),
-        }
-    }
+#[derive(Clone)]
+pub struct SpriteData {
+    pub kind: u8,
+    pub extra_bytes: Vec<u8>,
 }
 
 const THREE_BYTE_ID_RANGES: [RangeInclusive<u8>; 10] = [1..=13, 16..=25, 42..=103, 107..=143, 148..=160, 162..=189, 191..=192, 194..=196, 198..=213, 240..=250];
@@ -172,6 +152,59 @@ const FOUR_BYTE_IDS: [u8; 2] = [105, 106];
 const FIVE_BYTE_IDS: [u8; 3] = [15, 104, 161];
 const SEVEN_BYTE_IDS: [u8; 6] = [0, 14, 147, 190, 193, 197];
 const SEVEN_BYTE_ID_RANGES: [RangeInclusive<u8>; 1] = [26..=41];
+
+impl SpriteData {
+    fn read_step(sprite_data: &[u8], index: &mut usize) -> u8 {
+        let read = sprite_data[*index];
+        *index += 1;
+        read
+    }
+
+    pub fn read(sprite_data: &[u8], index: &mut usize) -> Result<(u8, u8, Self), Box<dyn Error>> {
+        let kind = Self::read_step(sprite_data, index);
+        let x = Self::read_step(sprite_data, index);
+        let y = Self::read_step(sprite_data, index);
+        let extra_bytes =
+            if THREE_BYTE_ID_RANGES.iter().any(|range| range.contains(&kind)) { Vec::new() }
+            else if FOUR_BYTE_IDS.contains(&kind) { vec![Self::read_step(sprite_data, index)] }
+            else if FIVE_BYTE_IDS.contains(&kind) { (0..2).map(|_| Self::read_step(sprite_data, index)).collect() }
+            else if SEVEN_BYTE_IDS.contains(&kind) || SEVEN_BYTE_ID_RANGES.iter().any(|range| range.contains(&kind)) { (0..4).map(|_| Self::read_step(sprite_data, index)).collect() }
+            else { return Err(Box::new(SimpleError("Unknown sprite"))) };
+
+        Ok((x, y, Self { kind, extra_bytes }))
+    }
+}
+
+impl Display for SpriteData {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.kind.fmt(f)?;
+        for extra_byte in &self.extra_bytes {
+            write!(f, "-{}", extra_byte)?;
+        }
+        Ok(())
+    }
+}
+
+impl FromStr for SpriteData {
+    type Err = Box<dyn Error>;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut parts = s.split("-");
+        let kind = parts.next().unwrap().parse()?;
+        let extra_bytes = parts.map(u8::from_str).collect::<Result<_, _>>()?;
+        Ok(Self { kind, extra_bytes })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum Sprite {
+    Collectible(Collectible),
+    Door(Door),
+    Enemy(Enemy),
+    WindRoute,
+    Save,
+    Other,
+}
 
 impl From<u8> for Sprite {
     fn from(id: u8) -> Self {
@@ -239,12 +272,7 @@ impl From<u8> for Sprite {
             248 => Sprite::Collectible(Collectible::TealKey),
             249 => Sprite::Door(Door::Purple),
             250 => Sprite::Collectible(Collectible::PurpleKey),
-            _ =>
-                if THREE_BYTE_ID_RANGES.iter().any(|range| range.contains(&id)) { Sprite::Other(3) }
-                else if FOUR_BYTE_IDS.contains(&id) { Sprite::Other(4) }
-                else if FIVE_BYTE_IDS.contains(&id) { Sprite::Other(5) }
-                else if SEVEN_BYTE_IDS.contains(&id) || SEVEN_BYTE_ID_RANGES.iter().any(|range| range.contains(&id)) { Sprite::Other(7) }
-                else { panic!("Unexpected sprite data") }
+            _ => Sprite::Other,
         }
     }
 }

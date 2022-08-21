@@ -1,15 +1,19 @@
 use std::cmp::Ordering;
+use std::error::Error;
 use std::fmt::{self, Display};
+use std::str::FromStr;
 
+use enum_utils::FromStr;
 use num_enum::FromPrimitive;
 use serde::{Serialize, Deserialize};
 
-use crate::sprite::Sprite;
+use crate::error::SimpleError;
+use crate::sprite::SpriteData;
 
 pub struct Map {
     pub identifier: MapIdentifier,
     pub tiles: Vec<Vec<u8>>,
-    pub sprites: Vec<Vec<Option<Sprite>>>,
+    pub sprites: Vec<Vec<Option<SpriteData>>>,
 }
 
 impl Display for Map {
@@ -22,7 +26,7 @@ impl Display for Map {
         writeln!(f)?;
         for row in &self.sprites {
             let row = row.iter().map(|sprite| match sprite {
-                Some(sprite) => format!("{:12}", sprite.to_string()),
+                Some(sprite) => format!("{:012}", sprite.to_string()),
                 None => "None        ".to_string(),
             }).collect::<Vec<_>>().join(", ");
 
@@ -32,7 +36,22 @@ impl Display for Map {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone, Copy, FromPrimitive)]
+impl FromStr for Map {
+    type Err = Box<dyn Error>;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (identifier, rest) = s.split_once("\n\n").ok_or(SimpleError("Invalid map format"))?;
+        let identifier = identifier.parse().map_err(|()| SimpleError("Invalid map identifier"))?;
+
+        let (tiles, sprites) = rest.split_once("\n\n").ok_or(SimpleError("Invalid map format"))?;
+        let tiles = tiles.lines().map(|line| line.split(',').map(str::trim).map(u8::from_str).collect()).collect::<Result<_, _>>()?;
+        let sprites = sprites.lines().map(|line| line.split(',').map(str::trim).map(|sprite| if sprite == "None" { Ok(None) } else { sprite.parse().map(Some) }).collect()).collect::<Result<_, _>>()?;
+
+        Ok(Map { identifier, tiles, sprites })
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone, Copy, FromPrimitive, FromStr)]
 #[repr(u8)]
 pub enum MapIdentifier {
     DustShelf = 1,
@@ -67,6 +86,7 @@ pub enum MapIdentifier {
     SmugglersRoad = 40,
     SmugglersRuin = 41,
     #[num_enum(default)]
+    #[enumeration(skip)]
     Unknown = u8::MAX,
 }
 
