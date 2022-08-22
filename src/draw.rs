@@ -79,7 +79,7 @@ pub fn draw_tile16s(path: impl AsRef<Path>, tile_data: &TileData) -> Result<(), 
     Ok(())
 }
 
-pub fn draw_map(map: Map, tile_data: &TileData) -> Result<RgbaImage, Box<dyn Error>> {
+pub fn draw_map(map: Map, tile_data: &TileData) -> RgbaImage {
     let width = map.tiles[0].len();
     let height = map.tiles.len();
     let mut image: RgbaImage = ImageBuffer::new(width as u32 * 16, height as u32 * 16);
@@ -192,7 +192,7 @@ pub fn draw_map(map: Map, tile_data: &TileData) -> Result<RgbaImage, Box<dyn Err
         }
     }
 
-    Ok(image)
+    image
 }
 
 pub fn merge_maps(maps: Vec<(MapIdentifier, RgbaImage)>) -> Result<RgbaImage, Box<dyn Error>> {

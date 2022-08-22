@@ -1,8 +1,5 @@
 use std::error::Error;
-use std::fs::{self, FileType};
-use std::path::{Path, PathBuf};
 
-use crate::draw;
 use crate::error::SimpleError;
 use crate::map::{Map, MapIdentifier};
 use crate::tile::{TileData, Tile8Data};
@@ -29,7 +26,7 @@ fn decode_graphics(bytes: Vec<u8>) -> Vec<Tile8Data> {
     ).collect()
 }
 
-fn encode_graphics(tile8_list: Vec<Tile8Data>) -> Vec<u8> {
+pub fn encode_graphics(tile8_list: Vec<Tile8Data>) -> Vec<u8> {
     tile8_list.into_iter().flat_map(|tile8|
         tile8.into_iter().flat_map(|col|
             [
@@ -109,7 +106,7 @@ fn decode_map(bytes: Vec<u8>) -> Result<Map, Box<dyn Error>> {
     Ok(Map { identifier, tiles, sprites })
 }
 
-fn encode_map(map: Map) -> Vec<u8> {
+pub fn encode_map(map: Map) -> Vec<u8> {
     let mut bytes = Vec::with_capacity(0);
 
     bytes.push(map.identifier as u8);
@@ -175,43 +172,4 @@ pub fn decode(files: Vec<(String, Vec<u8>)>) -> Result<Rom, Box<dyn Error>> {
     let tile_data = TileData::from(tile8_list);
 
     Ok(Rom { tile_data, images, maps, sounds, music, shaders })
-}
-
-fn import_dir(path: impl AsRef<Path>) -> Result<Vec<NamedFile>, Box<dyn Error>> {
-    let files = fs::read_dir(path)?.filter_map(|file| {
-        let file = file.ok()?;
-        if file.file_type().as_ref().map_or(false, FileType::is_file) {
-            let mut filename = PathBuf::from(file.file_name());
-            filename.set_extension("");
-            let bytes = fs::read(file.path()).ok()?;
-            Some((filename.to_string_lossy().to_string(), bytes))
-        } else { None }
-    }).collect();
-
-    Ok(files)
-}
-
-pub fn encode(path: impl AsRef<Path>) -> Result<Vec<NamedFile>, Box<dyn Error>> {
-    let mut files = Vec::with_capacity(1);
-
-    let path = path.as_ref();
-    let mut tile8_path = path.to_owned();
-    tile8_path.push("graphics/tile8/all.bmp");
-    let tile8_list = draw::undraw_tile8s(tile8_path)?;
-    files.push(("graphics".to_string(), encode_graphics(tile8_list)));
-
-    for folder in ["graphics", "sounds", "music", "shaders"] {
-        let mut folder_path = path.to_owned();
-        folder_path.push(folder);
-        files.append(&mut import_dir(folder_path)?);
-    }
-
-    let mut maps_path = path.to_owned();
-    maps_path.push("maps");
-    for (_, bytes) in import_dir(maps_path)? {
-        let map: Map = String::from_utf8(bytes)?.parse()?;
-        files.push((format!("map{:02}", map.identifier as u8), encode_map(map)));
-    }
-
-    Ok(files)
 }

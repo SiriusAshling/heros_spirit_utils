@@ -187,7 +187,7 @@ pub fn decode(path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
 
     let out = serde_json::to_string_pretty(&pretty)?;
 
-    let mut path = path.as_ref().with_extension("decoded.json");
+    let mut path = path.as_ref().with_extension("json");
     fs::write(&path, out)?;
 
     let completion_column = pretty.inventory.into_completion_column().into_iter().map(|value| value.to_string()).collect::<Vec<_>>().join("\n");
@@ -198,8 +198,7 @@ pub fn decode(path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
 }
 
 pub fn encode(path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
-    let path = path.as_ref();
-    let read_path = path.with_extension("decoded.json");
+    let read_path = path.as_ref().with_extension("json");
     let data = fs::read_to_string(&read_path)?;
 
     let SavePretty { steps, position, inventory, hearts, flags, playtime, deaths, label } = serde_json::from_str(&data)?;
@@ -210,10 +209,7 @@ pub fn encode(path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
     let savedat = SaveDat { position, values, hearts, flags, playtime, deaths, label };
 
     let out = scramble(steps, savedat)?;
-    let mut filename = path.file_name().unwrap_or_default().to_owned();
-    filename.push("_encoded");
-    let path = path.with_file_name(filename);
-    fs::write(&path, out)?;
+    fs::write(path, out)?;
 
     Ok(())
 }

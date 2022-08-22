@@ -60,13 +60,13 @@ pub fn export_map_image(path: impl AsRef<Path>, identifier: MapIdentifier, map: 
     util::ensure_dir(&path)?;
     path.push(format!("{}_{:?}.png", identifier as u8, identifier));
 
-    util::feedback(format!("Export map {:?}", identifier), map.save_with_format(&path, ImageFormat::Png));
+    map.save_with_format(&path, ImageFormat::Png)?;
 
     Ok(())
 }
 
 pub fn export_full_map_image(map: &RgbaImage) -> Result<(), Box<dyn Error>> {
-    let mut path = PathBuf::from("rom_export/maps/images");
+    let mut path = PathBuf::from("rom_files/maps/images");
     util::ensure_dir(&path)?;
     path.push("FullMap.png");
 
