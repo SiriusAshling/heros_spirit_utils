@@ -1,10 +1,9 @@
 mod error;
 mod zip;
-mod saves;
 mod savedata;
 mod global;
 mod rom;
-mod tile;
+mod graphics;
 mod palette;
 mod map;
 mod inventory;
@@ -49,9 +48,9 @@ fn main() {
 }
 
 fn export() {
-    util::feedback("Export savedata", saves::decode("savedata"));
-    util::feedback("Export savedatb", saves::decode("savedatb"));
-    util::feedback("Export savedatc", saves::decode("savedatc"));
+    util::feedback("Export savedata", savedata::decode("savedata"));
+    util::feedback("Export savedatb", savedata::decode("savedatb"));
+    util::feedback("Export savedatc", savedata::decode("savedatc"));
     util::feedback("Export global save", global::decode());
 
     util::feedback_and_then("Read rom", zip::read_rom("rom").and_then(rom::decode), |rom| {
@@ -78,9 +77,9 @@ fn export() {
 }
 
 fn import() {
-    util::feedback("Import savedata", saves::encode("savedata"));
-    util::feedback("Import savedatb", saves::encode("savedatb"));
-    util::feedback("Import savedatc", saves::encode("savedatc"));
+    util::feedback("Import savedata", savedata::encode("savedata"));
+    util::feedback("Import savedatb", savedata::encode("savedatb"));
+    util::feedback("Import savedatc", savedata::encode("savedatc"));
 
     let mut files = Vec::new();
 

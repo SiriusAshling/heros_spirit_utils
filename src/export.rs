@@ -9,7 +9,7 @@ use image::RgbaImage;
 use crate::map::{MapIdentifier, Map};
 use crate::util;
 use crate::draw;
-use crate::tile::TileData;
+use crate::graphics::TileData;
 use crate::zip::NamedFile;
 
 pub fn export_tilesets(path: impl AsRef<Path>, tile_data: &TileData) -> Result<(), Box<dyn Error>> {

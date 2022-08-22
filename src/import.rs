@@ -3,10 +3,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::error::Error;
 
-use crate::map::Map;
+use crate::map::{self, Map};
 use crate::zip::NamedFile;
-use crate::draw;
-use crate::rom;
+use crate::{draw, graphics};
 
 pub fn import_files(path: impl AsRef<Path>, files: &mut Vec<NamedFile>, extension: impl AsRef<OsStr>) -> Result<(), Box<dyn Error>> {
     files.extend(fs::read_dir(path)?.filter_map(|file| {
@@ -26,7 +25,7 @@ pub fn import_tilesets(path: impl AsRef<Path>, files: &mut Vec<NamedFile>) -> Re
     let mut path = path.as_ref().to_owned();
     path.push("tile8/all.bmp");
     let tile8_list = draw::undraw_tile8s(path)?;
-    files.push(("graphics".to_string(), rom::encode_graphics(tile8_list)));
+    files.push(("graphics".to_string(), graphics::encode_graphics(tile8_list)));
     Ok(())
 }
 
@@ -35,7 +34,7 @@ pub fn import_maps(path: impl AsRef<Path>, files: &mut Vec<NamedFile>) -> Result
     import_files(path, &mut maps, "txt")?;
     for (_, bytes) in maps {
         let map: Map = String::from_utf8(bytes)?.parse()?;
-        files.push((format!("map{:02}", map.identifier as u8), rom::encode_map(map)));
+        files.push((format!("map{:02}", map.identifier as u8), map::encode_map(map)));
     }
 
     Ok(())

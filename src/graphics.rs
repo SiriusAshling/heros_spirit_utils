@@ -1,7 +1,3 @@
-use std::ops::{Deref, DerefMut};
-
-use image::{ImageBuffer, Pixel};
-
 use crate::data::{TILE_16S, SPRITE_TILE_BIT_TABLE, SPRITE_TILE_FLIP_TABLE, SPRITE_TILE_BITS, SPRITE_TILE_FLIPS, ENEMY_TILE_BIT_TABLE, ENEMY_TILE_BITS, ENEMY_TILE_FLIPS};
 
 pub struct TileData {
@@ -10,6 +6,8 @@ pub struct TileData {
     pub sprite_tile16_list: Vec<Tile16>,
     pub enemy_tile16_list: Vec<Tile16>
 }
+
+pub type Tile8Data = Vec<Vec<u8>>;
 
 impl From<Vec<Tile8Data>> for TileData {
     fn from(tile8_list: Vec<Tile8Data>) -> Self {
@@ -126,71 +124,24 @@ pub fn map_tile16_list() -> Vec<Tile16> {
     tile16_list
 }
 
-pub fn draw_tile8<P, Container>(
-    tile8_list: &[Tile8Data],
-    tile8: &Tile8,
-    palette: [P; 4],
-    image: &mut ImageBuffer<P, Container>,
-    xoffset: u32,
-    yoffset: u32,
-    blend: bool,
-)
-where
-    P: Pixel + 'static,
-    P::Subpixel: 'static,
-    Container: Deref<Target = [P::Subpixel]> + DerefMut,
-{
-    let Tile8 {
-        index,
-        flipx,
-        flipy,
-        rotate,
-    } = tile8;
-    let tile8 = &tile8_list[*index as usize];
-
-    for (y, row) in tile8.iter().enumerate() {
-        for (x, pixel) in row.iter().enumerate() {
-            let pixel = palette[*pixel as usize];
-            let mut x =
-            if *flipx { 7 - x }
-            else { x } as u32;
-            let mut y =
-            if *flipy { 7 - y }
-            else { y } as u32;
-            if *rotate {
-                std::mem::swap(&mut x, &mut y);
-            }
-            x += xoffset;
-            y += yoffset;
-
-            if blend {
-                image.get_pixel_mut(x, y).blend(&pixel);
-            } else {
-                image.put_pixel(x, y, pixel);
-            }
-        }
-    }
+pub fn decode_graphics(bytes: Vec<u8>) -> Vec<Tile8Data> {
+    bytes.chunks(2).collect::<Vec<_>>().chunks(8).map(|tile8|
+        tile8.iter().map(|col|
+            (0..8).map(|index|
+                (col[0] & 1 << (7 - index) != 0) as u8 +
+                (col[1] & 1 << (7 - index) != 0) as u8 * 2
+            ).collect()
+        ).collect()
+    ).collect()
 }
 
-pub type Tile8Data = Vec<Vec<u8>>;
-pub fn draw_tile16<P, Container>(
-    tile8_list: &[Tile8Data],
-    tile16: &Tile16,
-    palette: [P; 4],
-    image: &mut ImageBuffer<P, Container>,
-    xoffset: u32,
-    yoffset: u32,
-    blend: bool,
-)
-where
-    P: Pixel + 'static,
-    P::Subpixel: 'static,
-    Container: Deref<Target = [P::Subpixel]> + DerefMut,
-{
-    for (tile_index, tile8) in tile16.iter().enumerate() {
-        let tile_xoffset = xoffset + if tile_index % 2 == 1 { 8 } else { 0 };
-        let tile_yoffset = yoffset + if tile_index > 1 { 8 } else { 0 };
-
-        draw_tile8(tile8_list, tile8, palette, image, tile_xoffset, tile_yoffset, blend);
-    }
+pub fn encode_graphics(tile8_list: Vec<Tile8Data>) -> Vec<u8> {
+    tile8_list.into_iter().flat_map(|tile8|
+        tile8.into_iter().flat_map(|col|
+            [
+                (0..8).fold(0, |acc, index| acc | ((col[index] & 1) << (7 - index))),
+                (0..8).fold(0, |acc, index| acc | ((col[index] & 2) >> 1 << (7 - index)))
+            ]
+        )
+    ).collect()
 }
