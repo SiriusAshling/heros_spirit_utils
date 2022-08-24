@@ -132,39 +132,42 @@ impl Map {
 
         let sprite_data = tmx.match_indices("<objectgroup").find_map(|(tags_start, _)| {
             let tags_end = tmx[tags_start..].find('>')? + tags_start;
-            let name = tmx[tags_start..tags_end].split(' ').find_map(|tag| tag.strip_prefix("name=\""))?.strip_suffix('"')?;
+            let (tags, has_properties) = tmx[tags_start..tags_end].strip_suffix('/').map_or((&tmx[tags_start..tags_end], true), |s| (s, false));
+            let name = tags.split(' ').find_map(|tag| tag.strip_prefix("name=\""))?.strip_suffix('"')?;
             if name != "Sprites" { return None }
-            let content_start = tags_end + 1;
-            let content_end = tmx[content_start..].find("</objectgroup>")? + content_start;
-            let sprites = tmx[content_start..content_end].trim().split("<object").filter_map(|object| {
-                let tags_end = object.find('>')?;
-                let (tags, has_properties) = object[..tags_end].strip_suffix('/').map_or((&object[..tags_end], true), |s| (s, false));
-                let tags = tags.split(' ').collect::<Vec<_>>();
-                let gid = tags.iter().find_map(|tag| tag.strip_prefix("gid=\""))?.strip_suffix('"')?.parse::<u16>().ok()?;
-                let kind = (gid - offset) as u8;
-                let (_, height) = Sprite::from(kind).tile_size();
-                let x = tags.iter().find_map(|tag| tag.strip_prefix("x=\""))?.strip_suffix('"')?.parse::<f32>().ok()?;
-                let x = (x / 16.0).round() as usize;
-                let y = tags.iter().find_map(|tag| tag.strip_prefix("y=\""))?.strip_suffix('"')?.parse::<f32>().ok()?;
-                let y = (y / 16.0).round() as usize - height as usize;
-                let extra_bytes = if has_properties {
-                    let content_start = tags_end + 1;
-                    let content_end = object[content_start..].find("</object>")? + content_start;
-                    let content = object[content_start..content_end].trim().strip_prefix("<properties>")?.strip_suffix("</properties>")?.trim();
-                    let mut extra_bytes = content.split("<property").filter_map(|byte| {
-                        let tags_end = byte.find("/>")?;
-                        let tags = byte[..tags_end].split(' ').collect::<Vec<_>>();
-                        let name = tags.iter().find_map(|tag| tag.strip_prefix("name=\""))?.strip_suffix('"')?;
-                        let index = name.strip_prefix("byte_")?.parse::<u8>().ok()?;
-                        let value = tags.iter().find_map(|tag| tag.strip_prefix("value=\""))?.strip_suffix('"')?.parse().ok()?;
-                        Some((index, value))
-                    }).collect::<Vec<_>>();
-                    extra_bytes.sort_unstable_by_key(|(index, _)| *index);
-                    extra_bytes.into_iter().map(|(_, value)| value).collect()
-                } else { Vec::new() };
+            let sprites = if has_properties {
+                let content_start = tags_end + 1;
+                let content_end = tmx[content_start..].find("</objectgroup>")? + content_start;
+                tmx[content_start..content_end].trim().split("<object").filter_map(|object| {
+                    let tags_end = object.find('>')?;
+                    let (tags, has_properties) = object[..tags_end].strip_suffix('/').map_or((&object[..tags_end], true), |s| (s, false));
+                    let tags = tags.split(' ').collect::<Vec<_>>();
+                    let gid = tags.iter().find_map(|tag| tag.strip_prefix("gid=\""))?.strip_suffix('"')?.parse::<u16>().ok()?;
+                    let kind = (gid - offset) as u8;
+                    let (_, height) = Sprite::from(kind).tile_size();
+                    let x = tags.iter().find_map(|tag| tag.strip_prefix("x=\""))?.strip_suffix('"')?.parse::<f32>().ok()?;
+                    let x = (x / 16.0).round() as usize;
+                    let y = tags.iter().find_map(|tag| tag.strip_prefix("y=\""))?.strip_suffix('"')?.parse::<f32>().ok()?;
+                    let y = (y / 16.0).round() as usize - height as usize;
+                    let extra_bytes = if has_properties {
+                        let content_start = tags_end + 1;
+                        let content_end = object[content_start..].find("</object>")? + content_start;
+                        let content = object[content_start..content_end].trim().strip_prefix("<properties>")?.strip_suffix("</properties>")?.trim();
+                        let mut extra_bytes = content.split("<property").filter_map(|byte| {
+                            let tags_end = byte.find("/>")?;
+                            let tags = byte[..tags_end].split(' ').collect::<Vec<_>>();
+                            let name = tags.iter().find_map(|tag| tag.strip_prefix("name=\""))?.strip_suffix('"')?;
+                            let index = name.strip_prefix("byte_")?.parse::<u8>().ok()?;
+                            let value = tags.iter().find_map(|tag| tag.strip_prefix("value=\""))?.strip_suffix('"')?.parse().ok()?;
+                            Some((index, value))
+                        }).collect::<Vec<_>>();
+                        extra_bytes.sort_unstable_by_key(|(index, _)| *index);
+                        extra_bytes.into_iter().map(|(_, value)| value).collect()
+                    } else { Vec::new() };
 
-                Some((x, y, kind, extra_bytes))
-            });
+                    Some((x, y, kind, extra_bytes))
+                }).collect()
+            } else { Vec::new() };
 
             Some(sprites)
         }).ok_or(SimpleError("Failed to read Sprites layer"))?;
