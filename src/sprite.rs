@@ -141,17 +141,17 @@ impl Ord for Enemy {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SpriteData {
     pub kind: u8,
     pub extra_bytes: Vec<u8>,
 }
 
-const THREE_BYTE_ID_RANGES: [RangeInclusive<u8>; 10] = [1..=13, 16..=25, 42..=103, 107..=143, 148..=160, 162..=189, 191..=192, 194..=196, 198..=213, 240..=250];
-const FOUR_BYTE_IDS: [u8; 2] = [105, 106];
-const FIVE_BYTE_IDS: [u8; 3] = [15, 104, 161];
-const SEVEN_BYTE_IDS: [u8; 6] = [0, 14, 147, 190, 193, 197];
-const SEVEN_BYTE_ID_RANGES: [RangeInclusive<u8>; 1] = [26..=41];
+const ONE_BYTE_ID_RANGES: [RangeInclusive<u8>; 10] = [1..=13, 16..=25, 42..=103, 107..=143, 148..=160, 162..=189, 191..=192, 194..=196, 198..=213, 240..=250];
+const TWO_BYTE_IDS: [u8; 2] = [105, 106];
+const THREE_BYTE_IDS: [u8; 3] = [15, 104, 161];
+const FIVE_BYTE_IDS: [u8; 6] = [0, 14, 147, 190, 193, 197];
+const FIVE_BYTE_ID_RANGES: [RangeInclusive<u8>; 1] = [26..=41];
 
 impl SpriteData {
     fn read_step(sprite_data: &[u8], index: &mut usize) -> u8 {
@@ -164,14 +164,18 @@ impl SpriteData {
         let kind = Self::read_step(sprite_data, index);
         let x = Self::read_step(sprite_data, index);
         let y = Self::read_step(sprite_data, index);
-        let extra_bytes =
-            if THREE_BYTE_ID_RANGES.iter().any(|range| range.contains(&kind)) { Vec::new() }
-            else if FOUR_BYTE_IDS.contains(&kind) { vec![Self::read_step(sprite_data, index)] }
-            else if FIVE_BYTE_IDS.contains(&kind) { (0..2).map(|_| Self::read_step(sprite_data, index)).collect() }
-            else if SEVEN_BYTE_IDS.contains(&kind) || SEVEN_BYTE_ID_RANGES.iter().any(|range| range.contains(&kind)) { (0..4).map(|_| Self::read_step(sprite_data, index)).collect() }
-            else { return Err(Box::new(SimpleError("Unknown sprite"))) };
-
+        let size = Self::size_of_kind(kind);
+        if size == 0 { Err(SimpleError("Unknown sprite"))? }
+        let extra_bytes = (1..size).map(|_| Self::read_step(sprite_data, index)).collect();
         Ok((x, y, Self { kind, extra_bytes }))
+    }
+
+    pub fn size_of_kind(kind: u8) -> usize {
+        if ONE_BYTE_ID_RANGES.iter().any(|range| range.contains(&kind)) { 1 }
+        else if TWO_BYTE_IDS.contains(&kind) { 2 }
+        else if THREE_BYTE_IDS.contains(&kind) { 3 }
+        else if FIVE_BYTE_IDS.contains(&kind) || FIVE_BYTE_ID_RANGES.iter().any(|range| range.contains(&kind)) { 5 }
+        else { 0 }
     }
 }
 
@@ -204,6 +208,16 @@ pub enum Sprite {
     WindRoute,
     Save,
     Other,
+}
+
+impl Sprite {
+    pub fn tile_size(&self) -> (u8, u8) {
+        match self {
+            Self::Enemy(Enemy::GDragon) => (3, 2),
+            Self::Enemy(Enemy::Basilisk) => (1, 2),
+            _ => (1, 1),
+        }
+    }
 }
 
 impl From<u8> for Sprite {

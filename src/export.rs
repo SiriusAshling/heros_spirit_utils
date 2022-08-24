@@ -43,13 +43,13 @@ pub fn export_files(path: impl AsRef<Path>, files: &[NamedFile], extension: impl
     Ok(())
 }
 
-pub fn export_maps(path: impl AsRef<Path>, maps: &[Map]) -> Result<(), Box<dyn Error>> {
+pub fn export_maps(path: impl AsRef<Path>, maps: &[Map], tile_data: &TileData) -> Result<(), Box<dyn Error>> {
     for map in maps {
         let mut path = path.as_ref().to_owned();
         util::ensure_dir(&path)?;
-        path.push(format!("{}_{:?}.txt", map.identifier as u8, map.identifier));
+        path.push(format!("map{:02}.tmx", map.identifier as u8));
 
-        fs::write(path, map.to_string())?;
+        fs::write(path, map.to_tmx(tile_data)?)?;
     }
 
     Ok(())

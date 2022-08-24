@@ -2,7 +2,7 @@ use std::error::Error;
 use std::ops::{Deref, DerefMut};
 use std::path::Path;
 
-use image::{RgbaImage, ImageFormat, ImageBuffer, Pixel};
+use image::{RgbaImage, ImageFormat, ImageBuffer, Pixel, Rgba};
 
 use crate::graphics::{Tile8, TileData, Tile16, Tile8Data};
 use crate::palette::{DEFAULT_PALETTE, self};
@@ -159,115 +159,142 @@ pub fn draw_map(map: Map, tile_data: &TileData) -> RgbaImage {
     let height = map.tiles.len();
     let mut image: RgbaImage = ImageBuffer::new(width as u32 * 16, height as u32 * 16);
 
-    let is_glitch = matches!(map.identifier, MapIdentifier::Glitch);
-    let bright_map = BRIGHT_MAPS.contains(&(map.identifier as u8));
-
     for (y, row) in map.tiles.into_iter().enumerate() {
         for (x, tile) in row.into_iter().enumerate() {
-            let mut tile = tile as usize;
-
-            let tile_flags = if is_glitch {
-                tile += 67;
-                TERRAIN_FLAGS[tile - 64]
-            } else {
-                TERRAIN_FLAGS[tile]
-            };
-
-            if let Some(tile16) = tile_data.map_tile16_list.get(tile - 1) {
-                let pixel_x = x as u32 * 16;
-                let pixel_y = y as u32 * 16;
-
-                let passage = tile_flags & 0b00010010 == 0b00010010;
-                let palette = palette::get_map_palette(tile, map.identifier);
-
-                draw_tile16(&tile_data.tile8_list, tile16, palette, &mut image, pixel_x, pixel_y, false);
-
-                if passage {
-                    draw_tile8(&tile_data.tile8_list, &Tile8::from(825), DEFAULT_PALETTE, &mut image, pixel_x + 4, pixel_y + 4, false);
-                }
-            }
+            draw_tile_onto(tile, x as u32, y as u32, map.identifier, tile_data, &mut image);
         }
     }
 
     for (y, row) in map.sprites.into_iter().enumerate() {
         for (x, sprite) in row.into_iter().enumerate() {
             if let Some(sprite) = sprite {
-                let sprite = Sprite::from(sprite.kind);
-
-                let pixel_x = x as u32 * 16;
-                let pixel_y = y as u32 * 16;
-
-                if let Sprite::Enemy(enemy) = sprite {
-                    let sprite_index = match enemy {
-                        Enemy::GDragon => {
-                            let palette = match map.identifier {
-                                MapIdentifier::CastleMonillud => palette::lookup_palette([11, 9, 25, 64]),
-                                MapIdentifier::TheUnderworld => palette::lookup_palette([7, 22, 23, 64]),
-                                _ => palette::lookup_palette([12, 18, 16, 64]),
-                            };
-
-                            let mut index = 561;
-                            for tile8_y in 0..4 {
-                                for tile8_x in 0..6 {
-                                    if tile8_y == 0 && (tile8_x == 0 || tile8_x > 3) { continue }
-                                    let tile8 = Tile8::from(index);
-                                    let xoffset = pixel_x + tile8_x * 8;
-                                    let yoffset = pixel_y + tile8_y * 8;
-                                    draw_tile8(&tile_data.tile8_list, &tile8, palette, &mut image, xoffset, yoffset, true);
-                                    index += 1;
-                                }
-                            }
-
-                            continue;
-                        },
-                        Enemy::Basilisk => {
-                            let palette = palette::lookup_palette([7, 22, 23, 64]);
-                            let mut index = 582;
-                            for tile8_y in 0..4 {
-                                for tile8_x in 0..2 {
-                                    let tile8 = Tile8::from(index);
-                                    let xoffset = pixel_x + tile8_x * 8;
-                                    let yoffset = pixel_y + tile8_y * 8;
-                                    draw_tile8(&tile_data.tile8_list, &tile8, palette, &mut image, xoffset, yoffset, true);
-                                    index += 1;
-                                }
-                            }
-
-                            continue;
-                        },
-                        // Enemy::Ragnarok => 20,
-                        // Enemy::EvilBunny => 42,
-                        // Enemy::DarkGhost => 43,
-                        _ => enemy as usize,
-                    };
-
-                    let tile16 = &tile_data.enemy_tile16_list[sprite_index];
-                    let palette = palette::get_enemy_palette(sprite_index);
-                    draw_tile16(&tile_data.tile8_list, tile16, palette, &mut image, pixel_x, pixel_y, true);
-                    continue;
-                }
-
-                let sprite_index = match sprite {
-                    Sprite::Collectible(collectible) => match collectible {
-                        Collectible::Sword | Collectible::SilverKey if bright_map => collectible as usize + 18,
-                        Collectible::PossumCoin => 100,
-                        _ => collectible as usize + 17,
-                    },
-                    Sprite::Door(door) => door as usize + 2,
-                    Sprite::WindRoute => 67,
-                    Sprite::Save => 0,
-                    _ => usize::MAX,
-                };
-                if sprite_index == usize::MAX { continue }
-
-                let tile16 = &tile_data.sprite_tile16_list[sprite_index];
-                let palette = palette::get_sprite_palette(sprite_index);
-                draw_tile16(&tile_data.tile8_list, tile16, palette, &mut image, pixel_x, pixel_y, true);
+                draw_sprite_onto(sprite.kind.into(), x as u32, y as u32, map.identifier, tile_data, &mut image);
             }
         }
     }
 
     image
+}
+
+fn draw_tile_onto(tile: u8, x: u32, y: u32, map_id: MapIdentifier, tile_data: &TileData, image: &mut RgbaImage) {
+    let mut tile = tile as usize;
+
+    let tile_flags = if map_id == MapIdentifier::Glitch {
+        tile += 67;
+        TERRAIN_FLAGS[tile - 64]
+    } else {
+        TERRAIN_FLAGS[tile]
+    };
+
+    if let Some(tile16) = tile_data.map_tile16_list.get(tile - 1) {
+        let pixel_x = x * 16;
+        let pixel_y = y * 16;
+
+        let passage = tile_flags & 0b00010010 == 0b00010010;
+        let palette = palette::get_map_palette(tile, map_id);
+
+        draw_tile16(&tile_data.tile8_list, tile16, palette, image, pixel_x, pixel_y, false);
+
+        if passage {
+            draw_tile8(&tile_data.tile8_list, &Tile8::from(825), DEFAULT_PALETTE, image, pixel_x + 4, pixel_y + 4, false);
+        }
+    }
+}
+
+fn draw_sprite_onto(sprite: Sprite, x: u32, y: u32, map_id: MapIdentifier, tile_data: &TileData, image: &mut RgbaImage) {
+    let pixel_x = x * 16;
+    let pixel_y = y * 16;
+
+    if let Sprite::Enemy(enemy) = sprite {
+        let sprite_index = match enemy {
+            Enemy::GDragon => {
+                let palette = match map_id {
+                    MapIdentifier::CastleMonillud => palette::lookup_palette([11, 9, 25, 64]),
+                    MapIdentifier::TheUnderworld => palette::lookup_palette([7, 22, 23, 64]),
+                    _ => palette::lookup_palette([12, 18, 16, 64]),
+                };
+
+                let mut index = 561;
+                for tile8_y in 0..4 {
+                    for tile8_x in 0..6 {
+                        if tile8_y == 0 && (tile8_x == 0 || tile8_x > 3) { continue }
+                        let tile8 = Tile8::from(index);
+                        let xoffset = pixel_x + tile8_x * 8;
+                        let yoffset = pixel_y + tile8_y * 8;
+                        draw_tile8(&tile_data.tile8_list, &tile8, palette, image, xoffset, yoffset, true);
+                        index += 1;
+                    }
+                }
+
+                return;
+            },
+            Enemy::Basilisk => {
+                let palette = palette::lookup_palette([7, 22, 23, 64]);
+                let mut index = 582;
+                for tile8_y in 0..4 {
+                    for tile8_x in 0..2 {
+                        let tile8 = Tile8::from(index);
+                        let xoffset = pixel_x + tile8_x * 8;
+                        let yoffset = pixel_y + tile8_y * 8;
+                        draw_tile8(&tile_data.tile8_list, &tile8, palette, image, xoffset, yoffset, true);
+                        index += 1;
+                    }
+                }
+
+                return;
+            },
+            // Enemy::Ragnarok => 20,
+            // Enemy::EvilBunny => 42,
+            // Enemy::DarkGhost => 43,
+            _ => enemy as usize,
+        };
+
+        let tile16 = &tile_data.enemy_tile16_list[sprite_index];
+        let palette = palette::get_enemy_palette(sprite_index);
+        draw_tile16(&tile_data.tile8_list, tile16, palette, image, pixel_x, pixel_y, true);
+        return;
+    }
+
+    let sprite_index = match sprite {
+        Sprite::Collectible(collectible) => match collectible {
+            Collectible::Sword | Collectible::SilverKey if BRIGHT_MAPS.contains(&(map_id as u8)) => collectible as usize + 18,
+            Collectible::PossumCoin => 100,
+            _ => collectible as usize + 17,
+        },
+        Sprite::Door(door) => door as usize + 2,
+        Sprite::WindRoute => 67,
+        Sprite::Save => 0,
+        _ => usize::MAX,
+    };
+    if sprite_index == usize::MAX { return }
+
+    let tile16 = &tile_data.sprite_tile16_list[sprite_index];
+    let palette = palette::get_sprite_palette(sprite_index);
+    draw_tile16(&tile_data.tile8_list, tile16, palette, image, pixel_x, pixel_y, true);
+}
+
+pub fn draw_tile(tile: u8, map_id: MapIdentifier, tile_data: &TileData) -> RgbaImage {
+    let mut image = RgbaImage::new(16, 16);
+    draw_tile_onto(tile, 0, 0, map_id, tile_data, &mut image);
+    image
+}
+
+pub fn draw_sprite(sprite: u8, map_id: MapIdentifier, tile_data: &TileData) -> RgbaImage {
+    let sprite = Sprite::from(sprite);
+    let (width, height) = sprite.tile_size();
+    let mut image = RgbaImage::new(width as u32 * 16, height as u32 * 16);
+    draw_sprite_onto(sprite, 0, 0, map_id, tile_data, &mut image);
+    draw_sprite_frame(&mut image);
+    image
+}
+
+fn draw_sprite_frame(image: &mut RgbaImage) {
+    for pos in 0..16 {
+        image.put_pixel(pos, 0, Rgba([0, 0, 0, 255]));
+        image.put_pixel(pos, 15, Rgba([0, 0, 0, 255]));
+        image.put_pixel(0, pos, Rgba([0, 0, 0, 255]));
+        image.put_pixel(15, pos, Rgba([0, 0, 0, 255]));
+    }
 }
 
 pub fn merge_maps(maps: Vec<(MapIdentifier, RgbaImage)>) -> Result<RgbaImage, Box<dyn Error>> {

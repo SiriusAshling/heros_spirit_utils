@@ -6,6 +6,7 @@ mod rom;
 mod graphics;
 mod palette;
 mod map;
+mod tiled;
 mod inventory;
 mod sprite;
 mod data;
@@ -62,7 +63,7 @@ fn export() {
             export::export_files("rom_files/sounds", &rom.sounds, "ogg")
             .and_then(|()| export::export_files("rom_files/music", &rom.music, "ogg")));
         util::feedback("Export shaders", export::export_files("rom_files/shaders", &rom.shaders, ""));
-        util::feedback("Export maps", export::export_maps("rom_files/maps", &rom.maps));
+        util::feedback("Export maps", export::export_maps("rom_files/maps", &rom.maps, &rom.tile_data));
 
         let maps = rom.maps.into_iter().map(|map| {
             let identifier = map.identifier;
