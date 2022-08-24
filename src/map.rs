@@ -1,115 +1,124 @@
-use std::cmp::Ordering;
 use std::error::Error;
-
-use enum_utils::FromStr;
-use num_enum::FromPrimitive;
-use serde::{Serialize, Deserialize};
 
 use crate::sprite::SpriteData;
 
 pub struct Map {
-    pub identifier: MapIdentifier,
+    pub identifier: u8,
     pub tiles: Vec<Vec<u8>>,
     pub sprites: Vec<Vec<Option<SpriteData>>>,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone, Copy, FromPrimitive, FromStr)]
-#[repr(u8)]
-pub enum MapIdentifier {
-    DustShelf = 1,
-    ThroneRoom = 2,
-    ExplodingThroneRoom = 4,
-    CastleRuins = 5,
-    NorthMundeman = 6,
-    SouthMundeman = 7,
-    VerdantCoast = 8,
-    OtherworldArena = 9,
-    CastleGrounds = 10,
-    Sanctuary = 11,
-    TheTunnels = 12,
-    Glitch = 13,
-    Luddershore = 14,
-    TheTundra = 15,
-    FrozenShore = 16,
-    HallowGround = 17,
-    SouthernSwamp = 18,
-    DragonsLair = 19,
-    CorruptedCastle = 20,
-    CastleMonillud = 21,
-    ThroneRoomConfrontation = 22,
-    TheUnderworld = 23,
-    Otherworld = 24,
-    MoltenCavern = 26,
-    TheDungeons = 27,
-    ItemShop = 28,
-    Convergence = 29,
-    TrialOfReality = 30,
-    HauntedManse = 35,
-    SmugglersRoad = 40,
-    SmugglersRuin = 41,
-    #[num_enum(default)]
-    #[enumeration(skip)]
-    Unknown = u8::MAX,
-}
-impl Default for MapIdentifier {
-    fn default() -> Self { Self::Unknown }
+pub const DUST_SHELF: u8 = 1;
+pub const THRONE_ROOM: u8 = 2;
+pub const EXPLODING_THRONE_ROOM: u8 = 4;
+pub const CASTLE_RUINS: u8 = 5;
+pub const NORTH_MUNDEMAN: u8 = 6;
+pub const SOUTH_MUNDEMAN: u8 = 7;
+pub const VERDANT_COAST: u8 = 8;
+pub const OTHERWORLD_ARENA: u8 = 9;
+pub const CASTLE_GROUNDS: u8 = 10;
+pub const SANCTUARY: u8 = 11;
+pub const THE_TUNNELS: u8 = 12;
+pub const GLITCH: u8 = 13;
+pub const LUDDERSHORE: u8 = 14;
+pub const THE_TUNDRA: u8 = 15;
+pub const FROZEN_SHORE: u8 = 16;
+pub const HALLOW_GROUND: u8 = 17;
+pub const SOUTHERN_SWAMP: u8 = 18;
+pub const DRAGONS_LAIR: u8 = 19;
+pub const CORRUPTED_CASTLE: u8 = 20;
+pub const CASTLE_MONILLUD: u8 = 21;
+pub const THRONE_ROOM_CONFRONTATION: u8 = 22;
+pub const THE_UNDERWORLD: u8 = 23;
+pub const OTHERWORLD: u8 = 24;
+pub const MOLTEN_CAVERN: u8 = 26;
+pub const THE_DUNGEONS: u8 = 27;
+pub const ITEM_SHOP: u8 = 28;
+pub const CONVERGENCE: u8 = 29;
+pub const TRIAL_OF_REALITY: u8 = 30;
+pub const HAUNTED_MANSE: u8 = 35;
+pub const SMUGGLERS_ROAD: u8 = 40;
+pub const SMUGGLERS_RUIN: u8 = 41;
+
+pub fn map_name(map: u8) -> &'static str {
+    match map {
+        DUST_SHELF => "DustShelf",
+        THRONE_ROOM => "ThroneRoom",
+        EXPLODING_THRONE_ROOM => "ExplodingThroneRoom",
+        CASTLE_RUINS => "CastleRuins",
+        NORTH_MUNDEMAN => "NorthMundeman",
+        SOUTH_MUNDEMAN => "SouthMundeman",
+        VERDANT_COAST => "VerdantCoast",
+        OTHERWORLD_ARENA => "OtherworldArena",
+        CASTLE_GROUNDS => "CastleGrounds",
+        SANCTUARY => "Sanctuary",
+        THE_TUNNELS => "TheTunnels",
+        GLITCH => "Glitch",
+        LUDDERSHORE => "Luddershore",
+        THE_TUNDRA => "TheTundra",
+        FROZEN_SHORE => "FrozenShore",
+        HALLOW_GROUND => "HallowGround",
+        SOUTHERN_SWAMP => "SouthernSwamp",
+        DRAGONS_LAIR => "DragonsLair",
+        CORRUPTED_CASTLE => "CorruptedCastle",
+        CASTLE_MONILLUD => "CastleMonillud",
+        THRONE_ROOM_CONFRONTATION => "ThroneRoomConfrontation",
+        THE_UNDERWORLD => "TheUnderworld",
+        OTHERWORLD => "Otherworld",
+        MOLTEN_CAVERN => "MoltenCavern",
+        THE_DUNGEONS => "TheDungeons",
+        ITEM_SHOP => "ItemShop",
+        CONVERGENCE => "Convergence",
+        TRIAL_OF_REALITY => "TrialOfReality",
+        HAUNTED_MANSE => "HauntedManse",
+        SMUGGLERS_ROAD => "SmugglersRoad",
+        SMUGGLERS_RUIN => "SmugglersRuin",
+        _ => "Unknown"
+    }
 }
 
-const MAP_ORDER: [MapIdentifier; 31] = [
-    MapIdentifier::CastleGrounds,
-    MapIdentifier::SouthMundeman,
-    MapIdentifier::TheTunnels,
-    MapIdentifier::SouthernSwamp,
-    MapIdentifier::DustShelf,
-    MapIdentifier::TheTundra,
-    MapIdentifier::HallowGround,
-    MapIdentifier::HauntedManse,
-    MapIdentifier::NorthMundeman,
-    MapIdentifier::MoltenCavern,
-    MapIdentifier::FrozenShore,
-    MapIdentifier::VerdantCoast,
-    MapIdentifier::Luddershore,
-    MapIdentifier::CastleMonillud,
-    MapIdentifier::TheDungeons,
-    MapIdentifier::ItemShop,
-    MapIdentifier::Sanctuary,
-    MapIdentifier::DragonsLair,
-    MapIdentifier::SmugglersRoad,
-    MapIdentifier::SmugglersRuin,
-    MapIdentifier::Otherworld,
-    MapIdentifier::OtherworldArena,
-    MapIdentifier::TheUnderworld,
-    MapIdentifier::Glitch,
-    MapIdentifier::CorruptedCastle,
-    MapIdentifier::ThroneRoom,
-    MapIdentifier::ThroneRoomConfrontation,
-    MapIdentifier::ExplodingThroneRoom,
-    MapIdentifier::CastleRuins,
-    MapIdentifier::Convergence,
-    MapIdentifier::TrialOfReality,
+const MAP_ORDER: [u8; 31] = [
+    CASTLE_GROUNDS,
+    SOUTH_MUNDEMAN,
+    THE_TUNNELS,
+    SOUTHERN_SWAMP,
+    DUST_SHELF,
+    THE_TUNDRA,
+    HALLOW_GROUND,
+    HAUNTED_MANSE,
+    NORTH_MUNDEMAN,
+    MOLTEN_CAVERN,
+    FROZEN_SHORE,
+    VERDANT_COAST,
+    LUDDERSHORE,
+    CASTLE_MONILLUD,
+    THE_DUNGEONS,
+    ITEM_SHOP,
+    SANCTUARY,
+    DRAGONS_LAIR,
+    SMUGGLERS_ROAD,
+    SMUGGLERS_RUIN,
+    OTHERWORLD,
+    OTHERWORLD_ARENA,
+    THE_UNDERWORLD,
+    GLITCH,
+    CORRUPTED_CASTLE,
+    THRONE_ROOM,
+    THRONE_ROOM_CONFRONTATION,
+    EXPLODING_THRONE_ROOM,
+    CASTLE_RUINS,
+    CONVERGENCE,
+    TRIAL_OF_REALITY,
 ];
 
-impl MapIdentifier {
-    fn order_index(&self) -> usize {
-        MAP_ORDER.iter().enumerate()
-            .find(|(_, identifier)| self == *identifier)
-            .map_or(usize::MAX, |(index, _)| index)
-    }
-}
-
-impl PartialOrd for MapIdentifier {
-    fn partial_cmp(&self, other: &MapIdentifier) -> Option<Ordering> {
-        self.order_index().partial_cmp(&other.order_index())
-    }
-}
-impl Ord for MapIdentifier {
-    fn cmp(&self, other: &MapIdentifier) -> Ordering {
-        self.order_index().cmp(&other.order_index())
-    }
+pub fn map_order_index(map: u8) -> usize {
+    MAP_ORDER.iter().enumerate()
+        .find(|(_, identifier)| map == **identifier)
+        .map_or(usize::MAX, |(index, _)| index)
 }
 
 pub fn decode_map(bytes: Vec<u8>) -> Result<Map, Box<dyn Error>> {
-    let map_id = bytes[0];
+    let identifier = bytes[0];
     let width = bytes[1];
     let width_usize = width as usize;
     let height = bytes[2];
@@ -126,7 +135,7 @@ pub fn decode_map(bytes: Vec<u8>) -> Result<Map, Box<dyn Error>> {
 
         for bit_index in 0..8 {
             let bit = byte & (1 << bit_index) != 0;
-            let position = (10963 * map_id as usize + index * 8) % (1 + bit_index);
+            let position = (10963 * identifier as usize + index * 8) % (1 + bit_index);
             bits.insert(position, bit);
         }
 
@@ -172,8 +181,6 @@ pub fn decode_map(bytes: Vec<u8>) -> Result<Map, Box<dyn Error>> {
         sprites[y as usize][x as usize] = Some(sprite);
     }
 
-    let identifier = MapIdentifier::from(map_id);
-
     Ok(Map { identifier, tiles, sprites })
 }
 
@@ -182,7 +189,7 @@ pub fn encode_map(map: Map) -> Vec<u8> {
     let sprite_byte_count = map.sprites.iter().flatten().filter_map(|sprite| sprite.as_ref()).map(|sprite| 1 + sprite.extra_bytes.len()).sum::<usize>();
     let mut bytes = Vec::with_capacity(3 + tile_byte_count + sprite_byte_count);
 
-    bytes.push(map.identifier as u8);
+    bytes.push(map.identifier);
     let width = map.tiles[0].len();
     let height = map.tiles.len();
     bytes.push(width as u8);

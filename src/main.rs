@@ -68,7 +68,7 @@ fn export() {
         let maps = rom.maps.into_iter().map(|map| {
             let identifier = map.identifier;
             let map = draw::draw_map(map, &rom.tile_data);
-            util::feedback(format!("Draw map {:?}", identifier), export::export_map_image("rom_files/maps/images", identifier, &map));
+            util::feedback(format!("Draw map {}", map::map_name(identifier)), export::export_map_image("rom_files/maps/images", identifier, &map));
             (identifier, map)
         }).collect();
         util::feedback("Draw world map",

@@ -1,4 +1,5 @@
-use crate::{data::{MAP_PALETTE_TABLE, PALETTES, MAP_PALETTES, COLOR_TABLE, SPRITE_PALETTE_TABLE, SPRITE_PALETTES, ENEMY_PALETTES}, map::MapIdentifier};
+use crate::data::{MAP_PALETTE_TABLE, PALETTES, MAP_PALETTES, COLOR_TABLE, SPRITE_PALETTE_TABLE, SPRITE_PALETTES, ENEMY_PALETTES};
+use crate::map;
 
 pub const DEFAULT_PALETTE: [image::Rgba<u8>; 4] = [
     image::Rgba([255, 255, 255, 255]),
@@ -14,11 +15,11 @@ pub fn lookup_palette(colors: [u8; 4]) -> [image::Rgba<u8>; 4] {
     [lookup(colors[0]), lookup(colors[1]), lookup(colors[2]), lookup(colors[3])]
 }
 
-pub fn get_map_palette(index: usize, map: MapIdentifier) -> [image::Rgba<u8>; 4] {
+pub fn get_map_palette(index: usize, map: u8) -> [image::Rgba<u8>; 4] {
     if let Some(index) = MAP_PALETTE_TABLE.get(index) {
         let index = *index as usize;
 
-        let colors = if matches!(map, MapIdentifier::SmugglersRoad | MapIdentifier::SmugglersRuin) {
+        let colors = if matches!(map, map::SMUGGLERS_ROAD | map::SMUGGLERS_RUIN) {
             PALETTES[index + 75]
         } else {
             PALETTES[MAP_PALETTES[map as usize] as usize * 5 + index]

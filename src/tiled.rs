@@ -4,9 +4,9 @@ use std::str::FromStr;
 
 use image::{ImageFormat, RgbaImage};
 
-use crate::draw;
+use crate::{draw, map};
 use crate::error::SimpleError;
-use crate::map::{Map, MapIdentifier};
+use crate::map::{Map};
 use crate::graphics::TileData;
 use crate::sprite::{SpriteData, Sprite};
 
@@ -30,7 +30,7 @@ impl Map {
         Ok(tmx)
     }
 
-    pub fn from_tmx(identifier: MapIdentifier, tmx: &str) -> Result<Self, Box<dyn Error>> {
+    pub fn from_tmx(identifier: u8, tmx: &str) -> Result<Self, Box<dyn Error>> {
         let (width, height) = Self::size_from_tmx(tmx)?;
         let tiles = Self::tiles_from_tmx(tmx, width)?;
         let offset = Self::first_gids_from_tmx(tmx, "Sprites")?;
@@ -40,7 +40,7 @@ impl Map {
     }
 
     fn tiles_tileset(&self, tile_data: &TileData) -> Result<String, Box<dyn Error>> {
-        let variants = if self.identifier == MapIdentifier::Glitch { 1..64 } else { 1..67 };
+        let variants = if self.identifier == map::GLITCH { 1..64 } else { 1..67 };
         self.tileset(variants.collect(), draw::draw_tile, TILE_OFFSET, "Tiles", tile_data)
     }
 
@@ -52,7 +52,7 @@ impl Map {
         self.tileset(variants, draw::draw_sprite, SPRITE_OFFSET, "Sprites", tile_data)
     }
 
-    fn tileset(&self, mut variants: Vec<u8>, draw_fn: impl Fn(u8, MapIdentifier, &TileData) -> RgbaImage, offset: u16, name: &str, tile_data: &TileData) -> Result<String, Box<dyn Error>> {
+    fn tileset(&self, mut variants: Vec<u8>, draw_fn: impl Fn(u8, u8, &TileData) -> RgbaImage, offset: u16, name: &str, tile_data: &TileData) -> Result<String, Box<dyn Error>> {
         variants.sort_unstable();
         variants.dedup();
 

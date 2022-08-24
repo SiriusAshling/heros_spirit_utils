@@ -8,7 +8,7 @@ use crate::graphics::{Tile8, TileData, Tile16, Tile8Data};
 use crate::palette::{DEFAULT_PALETTE, self};
 use crate::data::{TERRAIN_FLAGS, BRIGHT_MAPS};
 use crate::sprite::{Sprite, Collectible, Enemy};
-use crate::map::{MapIdentifier, Map};
+use crate::map::{Map, self};
 use crate::error::SimpleError;
 
 const TILE8_ROW_LENGTH: u32 = 16;
@@ -176,10 +176,10 @@ pub fn draw_map(map: Map, tile_data: &TileData) -> RgbaImage {
     image
 }
 
-fn draw_tile_onto(tile: u8, x: u32, y: u32, map_id: MapIdentifier, tile_data: &TileData, image: &mut RgbaImage) {
+fn draw_tile_onto(tile: u8, x: u32, y: u32, map_id: u8, tile_data: &TileData, image: &mut RgbaImage) {
     let mut tile = tile as usize;
 
-    let tile_flags = if map_id == MapIdentifier::Glitch {
+    let tile_flags = if map_id == map::GLITCH as u8 {
         tile += 67;
         TERRAIN_FLAGS[tile - 64]
     } else {
@@ -201,7 +201,7 @@ fn draw_tile_onto(tile: u8, x: u32, y: u32, map_id: MapIdentifier, tile_data: &T
     }
 }
 
-fn draw_sprite_onto(sprite: Sprite, x: u32, y: u32, map_id: MapIdentifier, tile_data: &TileData, image: &mut RgbaImage) {
+fn draw_sprite_onto(sprite: Sprite, x: u32, y: u32, map_id: u8, tile_data: &TileData, image: &mut RgbaImage) {
     let pixel_x = x * 16;
     let pixel_y = y * 16;
 
@@ -209,8 +209,8 @@ fn draw_sprite_onto(sprite: Sprite, x: u32, y: u32, map_id: MapIdentifier, tile_
         let sprite_index = match enemy {
             Enemy::GDragon => {
                 let palette = match map_id {
-                    MapIdentifier::CastleMonillud => palette::lookup_palette([11, 9, 25, 64]),
-                    MapIdentifier::TheUnderworld => palette::lookup_palette([7, 22, 23, 64]),
+                    map::CASTLE_MONILLUD => palette::lookup_palette([11, 9, 25, 64]),
+                    map::THE_UNDERWORLD => palette::lookup_palette([7, 22, 23, 64]),
                     _ => palette::lookup_palette([12, 18, 16, 64]),
                 };
 
@@ -257,7 +257,7 @@ fn draw_sprite_onto(sprite: Sprite, x: u32, y: u32, map_id: MapIdentifier, tile_
 
     let sprite_index = match sprite {
         Sprite::Collectible(collectible) => match collectible {
-            Collectible::Sword | Collectible::SilverKey if BRIGHT_MAPS.contains(&(map_id as u8)) => collectible as usize + 18,
+            Collectible::Sword | Collectible::SilverKey if BRIGHT_MAPS.contains(&map_id) => collectible as usize + 18,
             Collectible::PossumCoin => 100,
             _ => collectible as usize + 17,
         },
@@ -273,13 +273,13 @@ fn draw_sprite_onto(sprite: Sprite, x: u32, y: u32, map_id: MapIdentifier, tile_
     draw_tile16(&tile_data.tile8_list, tile16, palette, image, pixel_x, pixel_y, true);
 }
 
-pub fn draw_tile(tile: u8, map_id: MapIdentifier, tile_data: &TileData) -> RgbaImage {
+pub fn draw_tile(tile: u8, map_id: u8, tile_data: &TileData) -> RgbaImage {
     let mut image = RgbaImage::new(16, 16);
     draw_tile_onto(tile, 0, 0, map_id, tile_data, &mut image);
     image
 }
 
-pub fn draw_sprite(sprite: u8, map_id: MapIdentifier, tile_data: &TileData) -> RgbaImage {
+pub fn draw_sprite(sprite: u8, map_id: u8, tile_data: &TileData) -> RgbaImage {
     let sprite = Sprite::from(sprite);
     let (width, height) = sprite.tile_size();
     let mut image = RgbaImage::new(width as u32 * 16, height as u32 * 16);
@@ -297,7 +297,7 @@ fn draw_sprite_frame(image: &mut RgbaImage) {
     }
 }
 
-pub fn merge_maps(maps: Vec<(MapIdentifier, RgbaImage)>) -> Result<RgbaImage, Box<dyn Error>> {
+pub fn merge_maps(maps: Vec<(u8, RgbaImage)>) -> Result<RgbaImage, Box<dyn Error>> {
     let mut image = RgbaImage::new(7808, 9008);
 
     for (identifier, map) in maps {
@@ -316,39 +316,39 @@ pub fn merge_maps(maps: Vec<(MapIdentifier, RgbaImage)>) -> Result<RgbaImage, Bo
     Ok(image)
 }
 
-fn map_offset(identifier: MapIdentifier) -> (u32, u32) {
+fn map_offset(identifier: u8) -> (u32, u32) {
     match identifier {
-        MapIdentifier::DustShelf => (640, 3968),
-        MapIdentifier::ThroneRoom => (3840, 6976),
-        MapIdentifier::ExplodingThroneRoom => (2944, 5696),
-        MapIdentifier::CastleRuins => (4224, 5696),
-        MapIdentifier::NorthMundeman => (3712, 1600),
-        MapIdentifier::SouthMundeman => (3712, 2624),
-        MapIdentifier::VerdantCoast => (3712, 3648),
-        MapIdentifier::OtherworldArena => (5760, 4672),
-        MapIdentifier::CastleGrounds => (1664, 3648),
-        MapIdentifier::Sanctuary => (1152, 3968),
-        MapIdentifier::TheTunnels => (2016, 3264),
-        MapIdentifier::Glitch => (3264, 7360),
-        MapIdentifier::Luddershore => (4736, 1600),
-        MapIdentifier::TheTundra => (1664, 1216),
-        MapIdentifier::FrozenShore => (3712, 576),
-        MapIdentifier::HallowGround => (640, 1920),
-        MapIdentifier::SouthernSwamp => (640, 2944),
-        MapIdentifier::DragonsLair => (256, 4096),
-        MapIdentifier::CorruptedCastle => (3264, 8224),
-        MapIdentifier::CastleMonillud => (1664, 5696),
-        MapIdentifier::ThroneRoomConfrontation => (3456, 6976),
-        MapIdentifier::TheUnderworld => (5760, 1600),
-        MapIdentifier::Otherworld => (5760, 3648),
-        MapIdentifier::MoltenCavern => (4736, 0),
-        MapIdentifier::TheDungeons => (1664, 6976),
-        MapIdentifier::ItemShop => (6528, 4672),
-        MapIdentifier::Convergence => (1280, 4480),
-        MapIdentifier::TrialOfReality => (0, 4480),
-        MapIdentifier::HauntedManse => (1280, 1536),
-        MapIdentifier::SmugglersRoad => (6784, 4160),
-        MapIdentifier::SmugglersRuin => (6784, 3648),
-        MapIdentifier::Unknown => (0, 0),
+        map::DUST_SHELF => (640, 3968),
+        map::THRONE_ROOM => (3840, 6976),
+        map::EXPLODING_THRONE_ROOM => (2944, 5696),
+        map::CASTLE_RUINS => (4224, 5696),
+        map::NORTH_MUNDEMAN => (3712, 1600),
+        map::SOUTH_MUNDEMAN => (3712, 2624),
+        map::VERDANT_COAST => (3712, 3648),
+        map::OTHERWORLD_ARENA => (5760, 4672),
+        map::CASTLE_GROUNDS => (1664, 3648),
+        map::SANCTUARY => (1152, 3968),
+        map::THE_TUNNELS => (2016, 3264),
+        map::GLITCH => (3264, 7360),
+        map::LUDDERSHORE => (4736, 1600),
+        map::THE_TUNDRA => (1664, 1216),
+        map::FROZEN_SHORE => (3712, 576),
+        map::HALLOW_GROUND => (640, 1920),
+        map::SOUTHERN_SWAMP => (640, 2944),
+        map::DRAGONS_LAIR => (256, 4096),
+        map::CORRUPTED_CASTLE => (3264, 8224),
+        map::CASTLE_MONILLUD => (1664, 5696),
+        map::THRONE_ROOM_CONFRONTATION => (3456, 6976),
+        map::THE_UNDERWORLD => (5760, 1600),
+        map::OTHERWORLD => (5760, 3648),
+        map::MOLTEN_CAVERN => (4736, 0),
+        map::THE_DUNGEONS => (1664, 6976),
+        map::ITEM_SHOP => (6528, 4672),
+        map::CONVERGENCE => (1280, 4480),
+        map::TRIAL_OF_REALITY => (0, 4480),
+        map::HAUNTED_MANSE => (1280, 1536),
+        map::SMUGGLERS_ROAD => (6784, 4160),
+        map::SMUGGLERS_RUIN => (6784, 3648),
+        _ => (0, 0),
     }
 }

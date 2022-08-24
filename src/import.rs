@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::error::Error;
 use std::str::FromStr;
 
-use crate::map::{self, Map, MapIdentifier};
+use crate::map::{self, Map};
 use crate::zip::NamedFile;
 use crate::{draw, graphics};
 
@@ -35,7 +35,7 @@ pub fn import_maps(path: impl AsRef<Path>, files: &mut Vec<NamedFile>) -> Result
     let mut maps = Vec::new();
     import_files(path, &mut maps, "tmx")?;
     for (file_name, bytes) in maps {
-        let identifier = file_name.strip_prefix("map").map(u8::from_str).and_then(Result::ok).map(MapIdentifier::from).unwrap_or_default();
+        let identifier = file_name.strip_prefix("map").map(u8::from_str).and_then(Result::ok).unwrap_or_default();
         let map = Map::from_tmx(identifier, &String::from_utf8(bytes)?)?;
         files.push((file_name, map::encode_map(map)));
     }

@@ -1,6 +1,6 @@
 use std::{collections::{HashMap, HashSet}, path::Path, fs, error::Error};
 
-use crate::{map::Map, sprite::{Sprite, Collectible, Enemy}, util};
+use crate::{map::{Map, self}, sprite::{Sprite, Collectible, Enemy}, util};
 
 #[derive(Default)]
 struct SpriteStats {
@@ -35,7 +35,7 @@ pub fn map_stats(path: impl AsRef<Path>, maps: &[Map]) -> Result<(), Box<dyn Err
     all_enemies.sort_unstable();
 
     let mut sprite_stats = Vec::from_iter(sprite_stats);
-    sprite_stats.sort_unstable_by_key(|(map, _)| *map);
+    sprite_stats.sort_unstable_by_key(|(map, _)| map::map_order_index(*map));
 
     let collectibles_header = format!(", {}",
         all_collectibles.iter()
@@ -43,8 +43,8 @@ pub fn map_stats(path: impl AsRef<Path>, maps: &[Map]) -> Result<(), Box<dyn Err
             .collect::<Vec<_>>().join(", ")
     );
     let collectibles_stats = sprite_stats.iter().map(|(map, stats)|
-        format!("{:?}, {}",
-            map,
+        format!("{}, {}",
+            map::map_name(*map),
             all_collectibles.iter()
                 .map(|collectible| stats.collectibles.get(collectible).cloned().unwrap_or(0).to_string())
                 .collect::<Vec<_>>().join(", ")
@@ -56,8 +56,8 @@ pub fn map_stats(path: impl AsRef<Path>, maps: &[Map]) -> Result<(), Box<dyn Err
             .collect::<Vec<_>>().join(", ")
     );
     let enemies_stats = sprite_stats.iter().map(|(map, stats)|
-        format!("{:?}, {}",
-            map,
+        format!("{}, {}",
+            map::map_name(*map),
             all_enemies.iter()
                 .map(|enemy| stats.enemies.get(enemy).cloned().unwrap_or(0).to_string())
                 .collect::<Vec<_>>().join(", ")

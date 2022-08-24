@@ -6,7 +6,7 @@ use std::error::Error;
 use image::ImageFormat;
 use image::RgbaImage;
 
-use crate::map::{MapIdentifier, Map};
+use crate::map::{Map, self};
 use crate::util;
 use crate::draw;
 use crate::graphics::TileData;
@@ -47,7 +47,7 @@ pub fn export_maps(path: impl AsRef<Path>, maps: &[Map], tile_data: &TileData) -
     for map in maps {
         let mut path = path.as_ref().to_owned();
         util::ensure_dir(&path)?;
-        path.push(format!("map{:02}.tmx", map.identifier as u8));
+        path.push(format!("map{:02}.tmx", map.identifier));
 
         fs::write(path, map.to_tmx(tile_data)?)?;
     }
@@ -55,10 +55,10 @@ pub fn export_maps(path: impl AsRef<Path>, maps: &[Map], tile_data: &TileData) -
     Ok(())
 }
 
-pub fn export_map_image(path: impl AsRef<Path>, identifier: MapIdentifier, map: &RgbaImage) -> Result<(), Box<dyn Error>> {
+pub fn export_map_image(path: impl AsRef<Path>, identifier: u8, map: &RgbaImage) -> Result<(), Box<dyn Error>> {
     let mut path = path.as_ref().to_owned();
     util::ensure_dir(&path)?;
-    path.push(format!("{}_{:?}.png", identifier as u8, identifier));
+    path.push(format!("{}_{}.png", identifier as u8, map::map_name(identifier)));
 
     map.save_with_format(&path, ImageFormat::Png)?;
 

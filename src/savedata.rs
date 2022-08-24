@@ -5,7 +5,6 @@ use std::{fs, cmp::min};
 use num_enum::FromPrimitive;
 use serde::{Serialize, Deserialize};
 
-use crate::map::MapIdentifier;
 use crate::inventory::Inventory;
 use crate::data::{OBF, DEOBF};
 
@@ -33,7 +32,7 @@ pub enum Direction {
 
 #[derive(Serialize, Deserialize)]
 pub struct Position {
-    pub map: MapIdentifier,
+    pub map: u8,
     pub x: usize,
     pub y: usize,
     pub direction: Direction,
@@ -204,7 +203,7 @@ pub fn decode(path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
 
     // position
     let mut position_parts = savedat.position.split('.');
-    let map = MapIdentifier::from(position_parts.next().ok_or("malformed data")?.parse::<u8>()?);
+    let map = position_parts.next().ok_or("malformed data")?.parse::<u8>()?;
     let x = position_parts.next().ok_or("malformed data")?.parse()?;
     let y = position_parts.next().ok_or("malformed data")?.parse()?;
     let direction = Direction::from(position_parts.next().ok_or("malformed data")?.parse::<u8>()?);
