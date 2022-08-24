@@ -1,8 +1,6 @@
 use std::error::Error;
-use std::fmt::{self, Display};
 use std::ops::RangeInclusive;
 use std::cmp::Ordering;
-use std::str::FromStr;
 
 use enum_utils::FromStr;
 
@@ -141,7 +139,7 @@ impl Ord for Enemy {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct SpriteData {
     pub kind: u8,
     pub extra_bytes: Vec<u8>,
@@ -179,28 +177,7 @@ impl SpriteData {
     }
 }
 
-impl Display for SpriteData {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.kind.fmt(f)?;
-        for extra_byte in &self.extra_bytes {
-            write!(f, "-{}", extra_byte)?;
-        }
-        Ok(())
-    }
-}
-
-impl FromStr for SpriteData {
-    type Err = Box<dyn Error>;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut parts = s.split("-");
-        let kind = parts.next().unwrap().parse()?;
-        let extra_bytes = parts.map(u8::from_str).collect::<Result<_, _>>()?;
-        Ok(Self { kind, extra_bytes })
-    }
-}
-
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum Sprite {
     Collectible(Collectible),
     Door(Door),

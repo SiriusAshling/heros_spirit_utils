@@ -178,7 +178,9 @@ pub fn decode_map(bytes: Vec<u8>) -> Result<Map, Box<dyn Error>> {
 }
 
 pub fn encode_map(map: Map) -> Vec<u8> {
-    let mut bytes = Vec::with_capacity(0);
+    let tile_byte_count = map.tiles.iter().flatten().count();
+    let sprite_byte_count = map.sprites.iter().flatten().filter_map(|sprite| sprite.as_ref()).map(|sprite| 1 + sprite.extra_bytes.len()).sum::<usize>();
+    let mut bytes = Vec::with_capacity(3 + tile_byte_count + sprite_byte_count);
 
     bytes.push(map.identifier as u8);
     let width = map.tiles[0].len();

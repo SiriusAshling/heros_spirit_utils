@@ -13,15 +13,13 @@ pub fn map_stats(path: impl AsRef<Path>, maps: &[Map]) -> Result<(), Box<dyn Err
 
     for map in maps {
         for row in &map.sprites {
-            for sprite in row {
-                if let Some(sprite) = sprite {
-                    match sprite.kind.into() {
-                        Sprite::Collectible(collectible) =>
-                            *sprite_stats.entry(map.identifier).or_insert_with(SpriteStats::default).collectibles.entry(collectible).or_insert(0u8) += 1,
-                        Sprite::Enemy(enemy) =>
-                            *sprite_stats.entry(map.identifier).or_insert_with(SpriteStats::default).enemies.entry(enemy).or_insert(0u8) += 1,
-                        _ => {},
-                    }
+            for sprite in row.iter().flatten() {
+                match sprite.kind.into() {
+                    Sprite::Collectible(collectible) =>
+                        *sprite_stats.entry(map.identifier).or_insert_with(SpriteStats::default).collectibles.entry(collectible).or_insert(0u8) += 1,
+                    Sprite::Enemy(enemy) =>
+                        *sprite_stats.entry(map.identifier).or_insert_with(SpriteStats::default).enemies.entry(enemy).or_insert(0u8) += 1,
+                    _ => {},
                 }
             }
         }

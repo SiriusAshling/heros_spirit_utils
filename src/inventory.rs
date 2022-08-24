@@ -407,7 +407,7 @@ impl From<Vec<u8>> for Inventory {
 }
 
 impl Inventory {
-    pub fn into_vec(&self) -> Vec<u8> {
+    pub fn into_vec(self) -> Vec<u8> {
         vec![
             self.hearts,
             self.swords,
@@ -609,7 +609,7 @@ impl Inventory {
         ]
     }
 
-    pub fn into_completion_column(&self) -> Vec<u8> {
+    pub fn into_completion_column(self) -> Vec<u8> {
         [
             self.hearts,
             self.shield,

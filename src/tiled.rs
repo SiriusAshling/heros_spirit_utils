@@ -105,7 +105,7 @@ impl Map {
             let name = tags.iter().find_map(|tag| tag.strip_prefix("name=\""))?.strip_suffix('"')?;
             if name != tileset_name { return None }
             let first_gid = tags.iter().find_map(|tag| tag.strip_prefix("firstgid=\""))?.strip_suffix('"')?;
-            Some(first_gid.parse().ok()?)
+            first_gid.parse().ok()
         }).ok_or(SimpleError("Failed to read Sprite tileset from map"))?;
 
         Ok(first_gid)

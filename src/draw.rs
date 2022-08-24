@@ -106,7 +106,7 @@ pub fn undraw_tile8s(path: impl AsRef<Path>) -> Result<Vec<Tile8Data>, Box<dyn E
     let tile8_list = image.into_rgba8().pixels().collect::<Vec<_>>().chunks(8 * TILE8_ROW_LENGTH as usize).collect::<Vec<_>>().chunks(8).flat_map(|tile8_row| {
         (0..TILE8_ROW_LENGTH as usize).map(|index|
             tile8_row.iter().map(|pixel_row|
-                pixel_row[index * 8..(index + 1) * 8].into_iter().map(|pixel|
+                pixel_row[index * 8..(index + 1) * 8].iter().map(|pixel|
                     DEFAULT_PALETTE.iter().enumerate().find_map(|(index, default_pixel)|
                         if *pixel == default_pixel { Some(index as u8) } else { None }
                     ).ok_or(SimpleError("Invalid pixel color in tile8s"))

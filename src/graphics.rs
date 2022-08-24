@@ -71,23 +71,11 @@ fn build_sprite_tile(id: usize) -> Tile16 {
 }
 
 pub fn enemy_tile16_list() -> Vec<Tile16> {
-    let mut tile16_list = Vec::with_capacity(44);
-
-    for index in 0..=43 {
-        tile16_list.push(build_enemy_tile(index));
-    }
-
-    tile16_list
+    (0..ENEMY_TILE_BIT_TABLE.len()).map(build_enemy_tile).collect()
 }
 
 pub fn sprite_tile16_list() -> Vec<Tile16> {
-    let mut tile16_list = Vec::with_capacity(114);
-
-    for index in 0..=113 {
-        tile16_list.push(build_sprite_tile(index));
-    }
-
-    tile16_list
+    (0..SPRITE_TILE_BIT_TABLE.len()).map(build_sprite_tile).collect()
 }
 
 pub fn map_tile16_list() -> Vec<Tile16> {

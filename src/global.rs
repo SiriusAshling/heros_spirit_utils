@@ -70,7 +70,7 @@ impl GlobalFlag {
 pub fn decode() -> Result<(), Box<dyn Error>> {
     let data = fs::read("global")?;
 
-    let sequence = data[..10].into_iter().map(|number| number.to_string()).collect();
+    let sequence = data[..10].iter().map(|number| number.to_string()).collect();
 
     let flags = GlobalFlag::iter().map(|flag| (flag, flag.has(data[flag as usize + 10]))).collect();
 
