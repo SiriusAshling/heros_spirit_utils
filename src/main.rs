@@ -94,6 +94,6 @@ fn import() {
     util::feedback("Import maps", import::import_maps("rom_files/maps", &mut files));
 
     if !files.is_empty() {
-        util::feedback("Write rom", export::export_files("_rom", &files, ""));
+        util::feedback("Write rom", zip::write_rom("rom", files));
     }
 }
