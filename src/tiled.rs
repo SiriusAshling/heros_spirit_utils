@@ -4,6 +4,7 @@ use std::str::FromStr;
 
 use image::{ImageFormat, RgbaImage};
 
+use crate::data::TERRAIN_FLAGS;
 use crate::{draw, map};
 use crate::error::SimpleError;
 use crate::map::{Map};
@@ -40,22 +41,15 @@ impl Map {
     }
 
     fn tiles_tileset(&self, tile_data: &TileData) -> Result<String, Box<dyn Error>> {
-        let variants = if self.identifier == map::GLITCH { 1..64 } else { 1..67 };
-        self.tileset(variants.collect(), draw::draw_tile, TILE_OFFSET, "Tiles", tile_data)
+        let variants = if self.identifier == map::GLITCH { 1..TERRAIN_FLAGS.len() as u8 - 3 } else { 1..TERRAIN_FLAGS.len() as u8 };
+        self.tileset(variants, draw::draw_tile, TILE_OFFSET, "Tiles", tile_data)
     }
 
     fn sprite_tileset(&self, tile_data: &TileData) -> Result<String, Box<dyn Error>> {
-        let variants = self.sprites.iter().flatten()
-            .filter_map(|sprite| sprite.as_ref())
-            .map(|sprite| sprite.kind)
-            .collect();
-        self.tileset(variants, draw::draw_sprite, SPRITE_OFFSET, "Sprites", tile_data)
+        self.tileset(u8::MIN..u8::MAX, draw::draw_sprite, SPRITE_OFFSET, "Sprites", tile_data)
     }
 
-    fn tileset(&self, mut variants: Vec<u8>, draw_fn: impl Fn(u8, u8, &TileData) -> RgbaImage, offset: u16, name: &str, tile_data: &TileData) -> Result<String, Box<dyn Error>> {
-        variants.sort_unstable();
-        variants.dedup();
-
+    fn tileset(&self, variants: impl IntoIterator<Item = u8>, draw_fn: impl Fn(u8, u8, &TileData) -> RgbaImage, offset: u16, name: &str, tile_data: &TileData) -> Result<String, Box<dyn Error>> {
         let tiles_tmx = variants.into_iter().map(|id| {
             let image = draw_fn(id, self.identifier, tile_data);
             let mut bytes = BufWriter::new(Cursor::new(Vec::new()));
