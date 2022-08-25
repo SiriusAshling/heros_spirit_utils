@@ -28,6 +28,21 @@ pub enum Collectible {
     PossumCoin = 34,
 }
 
+#[derive(Clone)]
+pub enum Gear {
+    Hammer = 11,
+    Boots = 12,
+    Compass = 13,
+    Spectacles = 18,
+    LavaCharm = 19,
+    WindRing = 21,
+    SkeletonKey = 20,
+    GemSword = 16,
+    GemShield = 23,
+    RedSword = 31,
+    RedShield = 32,
+}
+
 #[derive(Debug, Clone, Copy, FromStr)]
 pub enum Door {
     Gold,
@@ -180,6 +195,7 @@ impl SpriteData {
 #[derive(Clone)]
 pub enum Sprite {
     Collectible(Collectible),
+    Gear(Gear),
     Door(Door),
     Enemy(Enemy),
     WindRoute,
@@ -208,20 +224,29 @@ impl From<u8> for Sprite {
             6 | 60 => Sprite::Collectible(Collectible::PortalStone),
             7 => Sprite::Collectible(Collectible::Gem),
             8 | 71 => Sprite::Collectible(Collectible::Treasure),
+            9 => Sprite::Gear(Gear::Hammer),
             10 => Sprite::Door(Door::Boulder),
+            11 => Sprite::Gear(Gear::Boots),
+            12 => Sprite::Gear(Gear::Compass),
             22 => Sprite::Door(Door::Blue),
             23 => Sprite::Collectible(Collectible::BlueKey),
             25 => Sprite::WindRoute,
             44 => Sprite::Save,
+            51 => Sprite::Gear(Gear::GemSword),
+            52 => Sprite::Gear(Gear::Spectacles),
             54 => Sprite::Door(Door::Green),
             55 => Sprite::Collectible(Collectible::GreenKey),
             56 => Sprite::Collectible(Collectible::GoldSword),
             57 | 58 => Sprite::Collectible(Collectible::Heart),
+            59 => Sprite::Gear(Gear::LavaCharm),
             61 => Sprite::Door(Door::Red),
             62 => Sprite::Collectible(Collectible::RedKey),
             63 => Sprite::Collectible(Collectible::ShrineKey),
             64 => Sprite::Collectible(Collectible::Shield),
+            65 => Sprite::Gear(Gear::GemShield),
+            67 => Sprite::Gear(Gear::SkeletonKey),
             68 => Sprite::Collectible(Collectible::Stopwatch),
+            72 => Sprite::Gear(Gear::WindRing),
             108 => Sprite::Enemy(Enemy::Basilisk),
             109 => Sprite::Enemy(Enemy::Bat),
             110 | 111 => Sprite::Enemy(Enemy::YBat),
@@ -258,6 +283,8 @@ impl From<u8> for Sprite {
             152 => Sprite::Collectible(Collectible::GemHeart),
             160 => Sprite::Enemy(Enemy::Rabbit),
             191 => Sprite::Enemy(Enemy::GWitch),
+            209 => Sprite::Gear(Gear::RedShield),
+            210 => Sprite::Gear(Gear::RedSword),
             213 => Sprite::Collectible(Collectible::PossumCoin),
             247 => Sprite::Door(Door::Teal),
             248 => Sprite::Collectible(Collectible::TealKey),

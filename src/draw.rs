@@ -205,8 +205,10 @@ fn draw_sprite_onto(sprite: Sprite, x: u32, y: u32, map_id: u8, tile_data: &Tile
     let pixel_x = x * 16;
     let pixel_y = y * 16;
 
-    if let Sprite::Enemy(enemy) = sprite {
-        let sprite_index = match enemy {
+    let is_enemy = matches!(sprite, Sprite::Enemy(_));
+
+    let sprite_index = match sprite {
+        Sprite::Enemy(enemy) => match enemy {
             Enemy::GDragon => {
                 let palette = match map_id {
                     map::CASTLE_MONILLUD => palette::lookup_palette([11, 9, 25, 64]),
@@ -247,29 +249,21 @@ fn draw_sprite_onto(sprite: Sprite, x: u32, y: u32, map_id: u8, tile_data: &Tile
             // Enemy::EvilBunny => 42,
             // Enemy::DarkGhost => 43,
             _ => enemy as usize,
-        };
-
-        let tile16 = &tile_data.enemy_tile16_list[sprite_index];
-        let palette = palette::get_enemy_palette(sprite_index);
-        draw_tile16(&tile_data.tile8_list, tile16, palette, image, pixel_x, pixel_y, true);
-        return;
-    }
-
-    let sprite_index = match sprite {
+        }
         Sprite::Collectible(collectible) => match collectible {
             Collectible::Sword | Collectible::SilverKey if BRIGHT_MAPS.contains(&map_id) => collectible as usize + 18,
             Collectible::PossumCoin => 100,
             _ => collectible as usize + 17,
         },
+        Sprite::Gear(gear) => gear as usize + 17,
         Sprite::Door(door) => door as usize + 2,
         Sprite::WindRoute => 67,
         Sprite::Save => 0,
-        _ => usize::MAX,
+        Sprite::Other => return,
     };
-    if sprite_index == usize::MAX { return }
 
-    let tile16 = &tile_data.sprite_tile16_list[sprite_index];
-    let palette = palette::get_sprite_palette(sprite_index);
+    let tile16 = &if is_enemy { &tile_data.enemy_tile16_list } else { &tile_data.sprite_tile16_list } [sprite_index];
+    let palette = if is_enemy { palette::get_enemy_palette } else { palette::get_sprite_palette } (sprite_index);
     draw_tile16(&tile_data.tile8_list, tile16, palette, image, pixel_x, pixel_y, true);
 }
 
