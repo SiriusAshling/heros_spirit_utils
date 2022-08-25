@@ -64,9 +64,12 @@ impl Map {
     }
 
     fn tiles_tiledata(&self) -> String {
-        self.tiles.iter().flatten()
-            .map(|&tile| (tile as u16 + TILE_OFFSET).to_string())
-            .collect::<Vec<_>>().join(",")
+        let mut tiles = self.tiles.iter().flatten().map(|&tile| (tile as u16 + TILE_OFFSET).to_string()).collect::<Vec<_>>();
+        // Some maps are missing the last tile
+        if tiles.len() != self.tiles.len() * self.tiles[0].len() {
+            tiles.push("0".to_string());
+        }
+        tiles.join(",")
     }
 
     fn sprites_tiledata(&self) -> String {
@@ -116,6 +119,7 @@ impl Map {
             let ids = content.split(',').map(str::trim).map(u16::from_str).collect::<Result<Vec<_>, _>>().ok()?;
             Some(ids)
         }).ok_or(SimpleError("Failed to read Tiles layer"))?.into_iter()
+            .filter(|tile| *tile != 0)  // filter out filler tiles that were added because of missing tiles in the map
             .map(|tile| (tile - TILE_OFFSET) as u8).collect::<Vec<_>>()
             .chunks(map_width).map(<[_]>::to_vec).collect();
         Ok(tiles)
