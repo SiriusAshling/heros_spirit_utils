@@ -259,7 +259,7 @@ fn draw_sprite_onto(sprite: Sprite, x: u32, y: u32, map_id: u8, tile_data: &Tile
         Sprite::Door(door) => door as usize + 2,
         Sprite::WindRoute => 67,
         Sprite::Save => 0,
-        Sprite::Other => return,
+        Sprite::Other(_) => return,
     };
 
     let tile16 = &if is_enemy { &tile_data.enemy_tile16_list } else { &tile_data.sprite_tile16_list } [sprite_index];

@@ -28,7 +28,7 @@ pub enum Collectible {
     PossumCoin = 34,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum Gear {
     Hammer = 11,
     Boots = 12,
@@ -192,7 +192,7 @@ impl SpriteData {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum Sprite {
     Collectible(Collectible),
     Gear(Gear),
@@ -200,7 +200,7 @@ pub enum Sprite {
     Enemy(Enemy),
     WindRoute,
     Save,
-    Other,
+    Other(u8),
 }
 
 impl Sprite {
@@ -290,7 +290,7 @@ impl From<u8> for Sprite {
             248 => Sprite::Collectible(Collectible::TealKey),
             249 => Sprite::Door(Door::Purple),
             250 => Sprite::Collectible(Collectible::PurpleKey),
-            _ => Sprite::Other,
+            _ => Sprite::Other(id),
         }
     }
 }

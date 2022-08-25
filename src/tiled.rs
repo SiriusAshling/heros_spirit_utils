@@ -55,7 +55,8 @@ impl Map {
             let mut bytes = BufWriter::new(Cursor::new(Vec::new()));
             image.write_to(&mut bytes, ImageFormat::Bmp)?;
             let image_string = base64::encode(bytes.buffer());
-            let tmx = format!(include_str!("tiled_tile_template.xml"), id, image_string);
+            let name = format!("{:?}", Sprite::from(id));
+            let tmx = format!(include_str!("tiled_tile_template.xml"), id, image_string, name);
             Ok(tmx)
         }).collect::<Result<String, Box<dyn Error>>>()?;
 
