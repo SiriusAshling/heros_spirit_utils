@@ -142,6 +142,10 @@ impl Map {
                     let (tags, has_properties) = object[..tags_end].strip_suffix('/').map_or((&object[..tags_end], true), |s| (s, false));
                     let tags = tags.split(' ').collect::<Vec<_>>();
                     let gid = tags.iter().find_map(|tag| tag.strip_prefix("gid=\""))?.strip_suffix('"')?.parse::<u16>().ok()?;
+                    if gid < offset {
+                        eprintln!("Map contains invalid sprite with gid {gid}. Did you place a tile on the sprite layer by accident?");
+                        return None;
+                    }
                     let kind = (gid - offset) as u8;
                     let (_, height) = Sprite::from(kind).tile_size();
                     let x = tags.iter().find_map(|tag| tag.strip_prefix("x=\""))?.strip_suffix('"')?.parse::<f32>().ok()?;
