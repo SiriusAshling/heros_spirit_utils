@@ -1,4 +1,5 @@
 use std::error::Error;
+use std::iter;
 use std::path::Path;
 use std::{fs, cmp::min};
 
@@ -235,9 +236,13 @@ pub fn decode(path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
     let mut path = path.as_ref().with_extension("json");
     fs::write(&path, out)?;
 
-    let completion_column = pretty.inventory.into_completion_column().into_iter().map(|value| value.to_string()).collect::<Vec<_>>().join("\n");
+    let mut completion_column = pretty.inventory.into_completion_column().into_iter().map(|value| value.to_string()).collect::<Vec<_>>();
     path.set_extension("completion");
-    fs::write(&path, completion_column)?;
+    fs::write(&path, completion_column.join("\n"))?;
+
+    completion_column.splice(61..73, iter::empty());
+    path.set_extension("convergence");
+    fs::write(&path, completion_column.join("\n"))?;
 
     Ok(())
 }

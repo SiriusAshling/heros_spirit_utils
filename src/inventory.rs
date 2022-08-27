@@ -269,7 +269,7 @@ inventory! {
 
 impl Inventory {
     pub fn into_completion_column(self) -> Vec<u8> {
-        [
+        vec![
             self.hearts,
             self.shield,
             self.total_silver_keys,
@@ -356,6 +356,6 @@ impl Inventory {
             self.completion_maze,
             self.completion_boots,
             self.completion_cloak,
-        ].into()
+        ]
     }
 }
