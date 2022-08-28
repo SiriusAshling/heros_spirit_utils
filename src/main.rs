@@ -32,7 +32,7 @@ enum Command {
     /// 
     /// Will search for "rom", "savedata", "savedatb" and "savedatc" in the current directory and operate on all files it can find
     Export,
-    /// Reimport the files exported earlier into the format used by the game
+    /// Reimport the files exported earlier into a rom
     Import,
 }
 
