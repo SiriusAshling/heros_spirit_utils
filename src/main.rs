@@ -24,7 +24,7 @@ use clap::{Parser, Subcommand};
 #[clap(version, about)]
 struct Args {
     #[clap(subcommand)]
-    command: Option<Command>,
+    command: Command,
 }
 #[derive(Subcommand)]
 enum Command {
@@ -33,18 +33,13 @@ enum Command {
     /// Will search for "rom", "savedata", "savedatb" and "savedatc" in the current directory and operate on all files it can find
     Export,
     /// Reimport the files exported earlier into the format used by the game
-    /// 
-    /// Does not (yet) repackage the rom, you will have to zip it yourself
     Import,
-}
-impl Default for Command {
-    fn default() -> Self { Self::Export }
 }
 
 fn main() {
     let args = Args::parse();
 
-    match args.command.unwrap_or_default() {
+    match args.command {
         Command::Export => export(),
         Command::Import => import(),
     }
