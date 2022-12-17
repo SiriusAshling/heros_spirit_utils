@@ -6,8 +6,8 @@ use image::{RgbaImage, ImageFormat, ImageBuffer, Pixel, Rgba};
 
 use crate::graphics::{Tile8, TileData, Tile16, Tile8Data};
 use crate::palette::{DEFAULT_PALETTE, self};
-use crate::data::{TERRAIN_FLAGS, BRIGHT_MAPS};
-use crate::sprite::{Sprite, Collectible, Enemy};
+use crate::data::{TERRAIN_FLAGS, BRIGHT_MAPS, MAP_PALETTES};
+use crate::sprite::{Sprite, Collectible, Enemy, Things, Door};
 use crate::map::{Map, self};
 use crate::error::SimpleError;
 
@@ -200,6 +200,18 @@ fn draw_tile_onto(tile: u8, x: u32, y: u32, map_id: u8, tile_data: &TileData, im
         }
     }
 }
+fn draw_map_sprite_tile_onto(tile: u8, x: u32, y: u32, map_id: u8, tile_data: &TileData, image: &mut RgbaImage) {
+    let index = (tile * 29 + MAP_PALETTES[map_id as usize]) as usize;
+
+    if let Some(tile16) = tile_data.map_sprite_tile16_list.get(index) {
+        let pixel_x = x * 16;
+        let pixel_y = y * 16;
+
+        let palette = palette::get_map_sprite_palette((tile == 1) as u8, index);
+
+        draw_tile16(&tile_data.tile8_list, tile16, palette, image, pixel_x, pixel_y, false);
+    }
+}
 
 fn draw_sprite_onto(sprite: Sprite, x: u32, y: u32, map_id: u8, tile_data: &TileData, image: &mut RgbaImage) {
     let pixel_x = x * 16;
@@ -259,6 +271,33 @@ fn draw_sprite_onto(sprite: Sprite, x: u32, y: u32, map_id: u8, tile_data: &Tile
         Sprite::Door(door) => door as usize + 2,
         Sprite::WindRoute => 67,
         Sprite::Save => 0,
+        Sprite::Things(things) => match things {
+            Things::CompassWall => {
+                draw_tile_onto(16, x, y, map_id, tile_data, image);
+                30
+            },
+            Things::NGMountain => {
+                draw_tile_onto(16, x, y, map_id, tile_data, image);
+                21
+            },
+            Things::NGPMountain => {
+                draw_tile_onto(16, x, y, map_id, tile_data, image);
+                109
+            },
+            Things::NGPBoulder => {
+                draw_sprite_onto(Sprite::Door(Door::Boulder), x, y, map_id, tile_data, image);
+                109
+            },
+            Things::NGPWall => {
+                draw_map_sprite_tile_onto(3, x, y, map_id, tile_data, image);
+                109
+            },
+            Things::NGPTransfer => {
+                draw_tile_onto(7, x, y, map_id, tile_data, image);
+                109
+            },
+            Things::UnderworldKeyhole => 84,
+        },
         Sprite::Other(_) => return,
     };
 
@@ -296,6 +335,7 @@ pub fn merge_maps(maps: Vec<(u8, RgbaImage)>) -> Result<RgbaImage, Box<dyn Error
 
     for (identifier, map) in maps {
         let (x_offset, mut y) = map_offset(identifier);
+        if x_offset + y == 0 { continue }
 
         for row in map.rows() {
             let mut x = x_offset;

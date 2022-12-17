@@ -25,6 +25,7 @@ pub enum Collectible {
     GemHeart,
     TealKey = 27,
     PurpleKey = 28,
+    UnderworldKey = 30,
     PossumCoin = 34,
 }
 
@@ -53,6 +54,7 @@ pub enum Door {
     Boulder,
     Teal,
     Purple,
+    Underworld,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, FromStr)]
@@ -154,6 +156,17 @@ impl Ord for Enemy {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, FromStr)]
+pub enum Things {
+    CompassWall,
+    NGMountain,
+    NGPMountain,
+    NGPBoulder,
+    NGPWall,
+    NGPTransfer,
+    UnderworldKeyhole,
+}
+
 #[derive(Clone)]
 pub struct SpriteData {
     pub kind: u8,
@@ -200,6 +213,7 @@ pub enum Sprite {
     Enemy(Enemy),
     WindRoute,
     Save,
+    Things(Things),
     Other(u8),
 }
 
@@ -228,6 +242,7 @@ impl From<u8> for Sprite {
             10 => Sprite::Door(Door::Boulder),
             11 => Sprite::Gear(Gear::Boots),
             12 => Sprite::Gear(Gear::Compass),
+            13 => Sprite::Things(Things::CompassWall),
             22 => Sprite::Door(Door::Blue),
             23 => Sprite::Collectible(Collectible::BlueKey),
             25 => Sprite::WindRoute,
@@ -283,6 +298,14 @@ impl From<u8> for Sprite {
             152 => Sprite::Collectible(Collectible::GemHeart),
             160 => Sprite::Enemy(Enemy::Rabbit),
             191 => Sprite::Enemy(Enemy::GWitch),
+            195 => Sprite::Things(Things::NGPMountain),
+            196 => Sprite::Things(Things::NGMountain),
+            197 => Sprite::Things(Things::NGPTransfer),
+            198 => Sprite::Things(Things::NGPBoulder),
+            199 => Sprite::Collectible(Collectible::UnderworldKey),
+            200 => Sprite::Things(Things::NGPWall),
+            201 => Sprite::Door(Door::Underworld),
+            208 => Sprite::Things(Things::UnderworldKeyhole),
             209 => Sprite::Gear(Gear::RedShield),
             210 => Sprite::Gear(Gear::RedSword),
             213 => Sprite::Collectible(Collectible::PossumCoin),

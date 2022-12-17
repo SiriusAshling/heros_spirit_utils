@@ -41,3 +41,9 @@ pub fn get_enemy_palette(index: usize) -> [image::Rgba<u8>; 4] {
 
     lookup_palette(colors)
 }
+
+pub fn get_map_sprite_palette(tile: u8, index: usize) -> [image::Rgba<u8>; 4] {
+    let colors = PALETTES[(index % 29) * 5 + tile as usize];
+
+    lookup_palette(colors)
+}
