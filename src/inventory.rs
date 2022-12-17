@@ -265,6 +265,12 @@ inventory! {
     rawr_3_x,
     rawr_3_y,
     rawr,
+    dragon_door,
+    sweet,
+    sour,
+    umami,
+    red_boots,
+    squishy_npc
 }
 
 impl Inventory {
