@@ -1,14 +1,88 @@
-pub const OBF: [u8; 256] = [11, 232, 4, 13, 199, 22, 40, 7, 114, 175, 20, 99, 170, 248, 221, 5, 109, 18, 227, 127, 239, 200, 1, 34, 120, 151, 234, 129, 198, 88, 12, 196, 77, 100, 148, 82, 240, 208, 186, 39, 173, 155, 168, 43, 126, 241, 47, 37, 201, 185, 134, 252, 230, 218, 167, 6, 237, 165, 68, 209, 174, 176, 41, 188, 70, 56, 187, 142, 107, 207, 136, 49, 8, 211, 105, 93, 228, 210, 183, 54, 104, 28, 144, 106, 193, 214, 242, 59, 131, 3, 29, 133, 57, 55, 141, 250, 115, 45, 158, 128, 75, 97, 194, 24, 27, 85, 184, 181, 205, 78, 153, 190, 146, 121, 235, 95, 46, 2, 87, 246, 81, 233, 182, 66, 180, 73, 215, 202, 212, 63, 23, 53, 223, 226, 65, 122, 19, 79, 159, 123, 172, 245, 83, 102, 220, 243, 36, 51, 86, 191, 96, 52, 0, 58, 61, 118, 169, 90, 31, 147, 222, 163, 224, 42, 103, 219, 69, 16, 251, 76, 195, 206, 64, 177, 138, 60, 225, 111, 32, 157, 92, 10, 236, 143, 238, 50, 91, 110, 25, 154, 119, 140, 145, 124, 150, 48, 213, 161, 67, 164, 156, 204, 84, 247, 80, 14, 130, 98, 62, 94, 152, 160, 149, 253, 15, 192, 33, 179, 178, 30, 229, 203, 249, 137, 166, 255, 72, 217, 26, 101, 71, 113, 244, 89, 74, 21, 135, 117, 44, 17, 125, 108, 132, 189, 162, 231, 197, 112, 116, 38, 139, 216, 254, 171, 9, 35];
-pub const DEOBF: [u8; 256] = [152, 22, 117, 89, 2, 15, 55, 7, 72, 254, 181, 0, 30, 3, 205, 214, 167, 239, 17, 136, 10, 235, 5, 130, 103, 188, 228, 104, 81, 90, 219, 158, 178, 216, 23, 255, 146, 47, 249, 39, 6, 62, 163, 43, 238, 97, 116, 46, 195, 71, 185, 147, 151, 131, 79, 93, 65, 92, 153, 87, 175, 154, 208, 129, 172, 134, 123, 198, 58, 166, 64, 230, 226, 125, 234, 100, 169, 32, 109, 137, 204, 120, 35, 142, 202, 105, 148, 118, 29, 233, 157, 186, 180, 75, 209, 115, 150, 101, 207, 11, 33, 229, 143, 164, 80, 74, 83, 68, 241, 16, 187, 177, 247, 231, 8, 96, 248, 237, 155, 190, 24, 113, 135, 139, 193, 240, 44, 19, 99, 27, 206, 88, 242, 91, 50, 236, 70, 223, 174, 250, 191, 94, 67, 183, 82, 192, 112, 159, 34, 212, 194, 25, 210, 110, 189, 41, 200, 179, 98, 138, 211, 197, 244, 161, 199, 57, 224, 54, 42, 156, 12, 253, 140, 40, 60, 9, 61, 173, 218, 217, 124, 107, 122, 78, 106, 49, 38, 66, 63, 243, 111, 149, 215, 84, 102, 170, 31, 246, 28, 4, 21, 48, 127, 221, 201, 108, 171, 69, 37, 59, 77, 73, 128, 196, 85, 126, 251, 227, 53, 165, 144, 14, 160, 132, 162, 176, 133, 18, 76, 220, 52, 245, 1, 121, 26, 114, 182, 56, 184, 20, 36, 45, 86, 145, 232, 141, 119, 203, 13, 222, 95, 168, 51, 213, 252, 225];
+pub const OBF: [u8; 256] = [
+    11, 232, 4, 13, 199, 22, 40, 7, 114, 175, 20, 99, 170, 248, 221, 5, 109, 18, 227, 127, 239,
+    200, 1, 34, 120, 151, 234, 129, 198, 88, 12, 196, 77, 100, 148, 82, 240, 208, 186, 39, 173,
+    155, 168, 43, 126, 241, 47, 37, 201, 185, 134, 252, 230, 218, 167, 6, 237, 165, 68, 209, 174,
+    176, 41, 188, 70, 56, 187, 142, 107, 207, 136, 49, 8, 211, 105, 93, 228, 210, 183, 54, 104, 28,
+    144, 106, 193, 214, 242, 59, 131, 3, 29, 133, 57, 55, 141, 250, 115, 45, 158, 128, 75, 97, 194,
+    24, 27, 85, 184, 181, 205, 78, 153, 190, 146, 121, 235, 95, 46, 2, 87, 246, 81, 233, 182, 66,
+    180, 73, 215, 202, 212, 63, 23, 53, 223, 226, 65, 122, 19, 79, 159, 123, 172, 245, 83, 102,
+    220, 243, 36, 51, 86, 191, 96, 52, 0, 58, 61, 118, 169, 90, 31, 147, 222, 163, 224, 42, 103,
+    219, 69, 16, 251, 76, 195, 206, 64, 177, 138, 60, 225, 111, 32, 157, 92, 10, 236, 143, 238, 50,
+    91, 110, 25, 154, 119, 140, 145, 124, 150, 48, 213, 161, 67, 164, 156, 204, 84, 247, 80, 14,
+    130, 98, 62, 94, 152, 160, 149, 253, 15, 192, 33, 179, 178, 30, 229, 203, 249, 137, 166, 255,
+    72, 217, 26, 101, 71, 113, 244, 89, 74, 21, 135, 117, 44, 17, 125, 108, 132, 189, 162, 231,
+    197, 112, 116, 38, 139, 216, 254, 171, 9, 35,
+];
+pub const DEOBF: [u8; 256] = [
+    152, 22, 117, 89, 2, 15, 55, 7, 72, 254, 181, 0, 30, 3, 205, 214, 167, 239, 17, 136, 10, 235,
+    5, 130, 103, 188, 228, 104, 81, 90, 219, 158, 178, 216, 23, 255, 146, 47, 249, 39, 6, 62, 163,
+    43, 238, 97, 116, 46, 195, 71, 185, 147, 151, 131, 79, 93, 65, 92, 153, 87, 175, 154, 208, 129,
+    172, 134, 123, 198, 58, 166, 64, 230, 226, 125, 234, 100, 169, 32, 109, 137, 204, 120, 35, 142,
+    202, 105, 148, 118, 29, 233, 157, 186, 180, 75, 209, 115, 150, 101, 207, 11, 33, 229, 143, 164,
+    80, 74, 83, 68, 241, 16, 187, 177, 247, 231, 8, 96, 248, 237, 155, 190, 24, 113, 135, 139, 193,
+    240, 44, 19, 99, 27, 206, 88, 242, 91, 50, 236, 70, 223, 174, 250, 191, 94, 67, 183, 82, 192,
+    112, 159, 34, 212, 194, 25, 210, 110, 189, 41, 200, 179, 98, 138, 211, 197, 244, 161, 199, 57,
+    224, 54, 42, 156, 12, 253, 140, 40, 60, 9, 61, 173, 218, 217, 124, 107, 122, 78, 106, 49, 38,
+    66, 63, 243, 111, 149, 215, 84, 102, 170, 31, 246, 28, 4, 21, 48, 127, 221, 201, 108, 171, 69,
+    37, 59, 77, 73, 128, 196, 85, 126, 251, 227, 53, 165, 144, 14, 160, 132, 162, 176, 133, 18, 76,
+    220, 52, 245, 1, 121, 26, 114, 182, 56, 184, 20, 36, 45, 86, 145, 232, 141, 119, 203, 13, 222,
+    95, 168, 51, 213, 252, 225,
+];
 // Terrain Flags are: unused, ?, Water Path / Death Tile, Hard Wall, Blocks Movement, Lava, Slow, Blocks Sight
-pub const TERRAIN_FLAGS: [u8; 67] = [0b00001001, 0b00001001, 0, 0, 0, 0, 0b00010011, 0, 0, 0, 0, 0, 0, 0, 0b00001001, 0b00001001, 0b00001001, 0b00001001, 0, 0, 0b00000011, 0b00000011, 0b00000010, 0b00000010, 0b00010011, 0b00000011, 0, 0b00000011, 0b00000011, 0, 0b00001010, 0b00000110, 0b00001010, 0b00001010, 0b00001010, 0b00001010, 0b00001010, 0b00001010, 0b00001010, 0b00001010, 0b00001010, 0b00001010, 0b00001010, 0b00001010, 0b00001010, 0b00001010, 0b00001010, 0b00001010, 0b00000110, 0b00000110, 0b00000110, 0b00000110, 0b00000110, 0b00000110, 0b00000110, 0b00000110, 0b00000110, 0b00000110, 0b00000110, 0b00000110, 0b00000110, 0b00000110, 0b00000110, 0b00000110, 0b00010011, 0b00001001, 0b00001001];
+pub const TERRAIN_FLAGS: [u8; 67] = [
+    0b00001001, 0b00001001, 0, 0, 0, 0, 0b00010011, 0, 0, 0, 0, 0, 0, 0, 0b00001001, 0b00001001,
+    0b00001001, 0b00001001, 0, 0, 0b00000011, 0b00000011, 0b00000010, 0b00000010, 0b00010011,
+    0b00000011, 0, 0b00000011, 0b00000011, 0, 0b00001010, 0b00000110, 0b00001010, 0b00001010,
+    0b00001010, 0b00001010, 0b00001010, 0b00001010, 0b00001010, 0b00001010, 0b00001010, 0b00001010,
+    0b00001010, 0b00001010, 0b00001010, 0b00001010, 0b00001010, 0b00001010, 0b00000110, 0b00000110,
+    0b00000110, 0b00000110, 0b00000110, 0b00000110, 0b00000110, 0b00000110, 0b00000110, 0b00000110,
+    0b00000110, 0b00000110, 0b00000110, 0b00000110, 0b00000110, 0b00000110, 0b00010011, 0b00001001,
+    0b00001001,
+];
 pub const PASS: &[u8] = b"uqqwptqvOwwuswstp";
 pub const BRIGHT_MAPS: [u8; 3] = [8, 15, 16];
-pub const SPRITE_TILE_BIT_TABLE: [u8; 114] = [0, 1, 2, 2, 2, 2, 2, 3, 2, 2, 44, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 10, 10, 11, 11, 12, 13, 14, 15, 16, 17, 18, 11, 11, 19, 20, 21, 22, 23, 24, 24, 25, 19, 11, 10, 10, 16, 43, 11, 24, 26, 27, 28, 29, 29, 29, 29, 30, 31, 32, 33, 30, 31, 32, 33, 34, 35, 36, 37, 37, 38, 39, 40, 41, 30, 31, 32, 33, 42, 37, 37, 38, 39, 9, 45, 46, 47, 48, 30, 31, 32, 33, 44, 49, 50, 44, 37, 37, 38, 39, 51, 52, 53, 54, 55, 0, 1, 56, 11, 24, 33, 32, 31, 30];
-pub const SPRITE_TILE_BITS: [u16; 228] = [614, 615, 616, 617, 618, 618, 620, 621, 0, 1, 16, 17, 219, 220, 221, 222, 622, 623, 624, 625, 534, 535, 538, 539, 536, 537, 538, 539, 540, 541, 544, 545, 542, 543, 544, 545, 654, 654, 655, 656, 126, 127, 128, 129, 130, 131, 132, 133, 207, 208, 209, 210, 211, 212, 213, 214, 203, 204, 205, 206, 215, 216, 217, 218, 223, 79, 225, 226, 227, 228, 229, 230, 240, 258, 260, 266, 612, 612, 613, 613, 626, 627, 628, 629, 610, 611, 611, 610, 606, 607, 608, 609, 598, 599, 600, 601, 602, 603, 604, 605, 640, 641, 642, 643, 631, 632, 632, 633, 634, 634, 635, 635, 636, 637, 638, 639, 241, 242, 243, 244, 526, 526, 526, 526, 527, 527, 527, 527, 528, 528, 528, 528, 529, 529, 529, 529, 224, 224, 224, 224, 652, 653, 653, 652, 653, 652, 652, 653, 657, 657, 657, 657, 658, 658, 658, 658, 659, 659, 659, 659, 630, 630, 630, 630, 546, 547, 548, 549, 688, 689, 690, 691, 741, 742, 743, 744, 747, 747, 748, 748, 745, 745, 746, 746, 758, 759, 774, 775, 756, 757, 772, 773, 760, 761, 776, 777, 192, 193, 193, 192, 193, 192, 192, 193, 762, 763, 778, 779, 792, 793, 808, 809, 784, 785, 800, 801, 790, 791, 806, 807, 752, 753, 768, 769, 788, 789, 804, 805];
-pub const SPRITE_TILE_FLIP_TABLE: [u8; 114] = [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 3, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 4, 2, 0, 0, 0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 0, 0, 5, 5, 5, 5, 5, 0, 5, 5, 5, 5, 0, 5, 5, 5, 5, 1, 2, 0, 0, 0, 5, 5, 5, 5, 2, 0, 0, 2, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 5, 5, 5, 5];
-pub const SPRITE_TILE_FLIPS: [bool; 72] = [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, true, false, false, false, false, false, true, false, false, false, false, false, false, false, false, true, true, false, true, true, false, false, false, false, false, false, false, false, false, true, false, false, false, false, false, false, true, false, false, false, true, false, true, true, false];
-pub const SPRITE_PALETTE_TABLE: [u8; 114] = [0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 59, 6, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 52, 21, 24, 25, 26, 24, 27, 28, 29, 30, 31, 32, 20, 27, 13, 27, 20, 34, 35, 36, 58, 60, 60, 37, 37, 37, 38, 39, 40, 41, 42, 42, 42, 42, 43, 43, 43, 43, 44, 45, 45, 46, 47, 48, 47, 49, 50, 51, 51, 51, 51, 53, 54, 55, 56, 55, 57, 59, 61, 62, 63, 64, 64, 64, 64, 65, 66, 66, 67, 68, 69, 70, 69, 71, 72, 73, 74, 75, 76, 76, 77, 78, 78, 79, 79, 79, 79];
+pub const SPRITE_TILE_BIT_TABLE: [u8; 114] = [
+    0, 1, 2, 2, 2, 2, 2, 3, 2, 2, 44, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 10, 10, 11, 11, 12, 13, 14,
+    15, 16, 17, 18, 11, 11, 19, 20, 21, 22, 23, 24, 24, 25, 19, 11, 10, 10, 16, 43, 11, 24, 26, 27,
+    28, 29, 29, 29, 29, 30, 31, 32, 33, 30, 31, 32, 33, 34, 35, 36, 37, 37, 38, 39, 40, 41, 30, 31,
+    32, 33, 42, 37, 37, 38, 39, 9, 45, 46, 47, 48, 30, 31, 32, 33, 44, 49, 50, 44, 37, 37, 38, 39,
+    51, 52, 53, 54, 55, 0, 1, 56, 11, 24, 33, 32, 31, 30,
+];
+pub const SPRITE_TILE_BITS: [u16; 228] = [
+    614, 615, 616, 617, 618, 618, 620, 621, 0, 1, 16, 17, 219, 220, 221, 222, 622, 623, 624, 625,
+    534, 535, 538, 539, 536, 537, 538, 539, 540, 541, 544, 545, 542, 543, 544, 545, 654, 654, 655,
+    656, 126, 127, 128, 129, 130, 131, 132, 133, 207, 208, 209, 210, 211, 212, 213, 214, 203, 204,
+    205, 206, 215, 216, 217, 218, 223, 79, 225, 226, 227, 228, 229, 230, 240, 258, 260, 266, 612,
+    612, 613, 613, 626, 627, 628, 629, 610, 611, 611, 610, 606, 607, 608, 609, 598, 599, 600, 601,
+    602, 603, 604, 605, 640, 641, 642, 643, 631, 632, 632, 633, 634, 634, 635, 635, 636, 637, 638,
+    639, 241, 242, 243, 244, 526, 526, 526, 526, 527, 527, 527, 527, 528, 528, 528, 528, 529, 529,
+    529, 529, 224, 224, 224, 224, 652, 653, 653, 652, 653, 652, 652, 653, 657, 657, 657, 657, 658,
+    658, 658, 658, 659, 659, 659, 659, 630, 630, 630, 630, 546, 547, 548, 549, 688, 689, 690, 691,
+    741, 742, 743, 744, 747, 747, 748, 748, 745, 745, 746, 746, 758, 759, 774, 775, 756, 757, 772,
+    773, 760, 761, 776, 777, 192, 193, 193, 192, 193, 192, 192, 193, 762, 763, 778, 779, 792, 793,
+    808, 809, 784, 785, 800, 801, 790, 791, 806, 807, 752, 753, 768, 769, 788, 789, 804, 805,
+];
+pub const SPRITE_TILE_FLIP_TABLE: [u8; 114] = [
+    0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 2, 0, 3, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 4, 2, 0, 0, 0, 0, 0, 5, 5, 5, 5, 5, 5, 5,
+    5, 5, 0, 0, 5, 5, 5, 5, 5, 0, 5, 5, 5, 5, 0, 5, 5, 5, 5, 1, 2, 0, 0, 0, 5, 5, 5, 5, 2, 0, 0, 2,
+    5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 5, 5, 5, 5,
+];
+pub const SPRITE_TILE_FLIPS: [bool; 72] = [
+    false, false, false, false, false, false, false, false, false, false, false, false, false,
+    false, false, true, false, false, false, false, false, false, false, false, false, false,
+    false, true, false, false, false, false, false, true, false, false, false, false, false, false,
+    false, false, true, true, false, true, true, false, false, false, false, false, false, false,
+    false, false, true, false, false, false, false, false, false, true, false, false, false, true,
+    false, true, true, false,
+];
+pub const SPRITE_PALETTE_TABLE: [u8; 114] = [
+    0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 59, 6, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
+    52, 21, 24, 25, 26, 24, 27, 28, 29, 30, 31, 32, 20, 27, 13, 27, 20, 34, 35, 36, 58, 60, 60, 37,
+    37, 37, 38, 39, 40, 41, 42, 42, 42, 42, 43, 43, 43, 43, 44, 45, 45, 46, 47, 48, 47, 49, 50, 51,
+    51, 51, 51, 53, 54, 55, 56, 55, 57, 59, 61, 62, 63, 64, 64, 64, 64, 65, 66, 66, 67, 68, 69, 70,
+    69, 71, 72, 73, 74, 75, 76, 76, 77, 78, 78, 79, 79, 79, 79,
+];
 pub const SPRITE_PALETTES: [[u8; 4]; 80] = [
     [25, 57, 43, 64],
     [13, 24, 40, 64],
@@ -91,9 +165,55 @@ pub const SPRITE_PALETTES: [[u8; 4]; 80] = [
     [11, 26, 42, 64],
     [2, 17, 49, 3],
 ];
-pub const ENEMY_TILE_BIT_TABLE: [u8; 44] = [0, 1, 2, 2, 3, 3, 4, 5, 0, 6, 7, 7, 8, 8, 8, 1, 1, 1, 1, 9, 9, 10, 10, 10, 11, 11, 11, 0, 0, 0, 12, 13, 3, 14, 13, 15, 16, 15, 16, 17, 0, 13, 17, 5];
-pub const ENEMY_TILE_BITS: [u16; 144] = [245, 246, 249, 250, 247, 248, 251, 252, 295, 296, 299, 300, 297, 298, 301, 302, 253, 253, 257, 257, 255, 255, 259, 259, 261, 262, 262, 261, 262, 261, 261, 262, 263, 263, 264, 264, 263, 263, 264, 264, 265, 265, 269, 270, 267, 267, 271, 272, 273, 274, 277, 278, 275, 276, 279, 280, 281, 282, 283, 284, 281, 282, 285, 286, 287, 288, 291, 292, 289, 290, 293, 294, 303, 304, 307, 308, 305, 306, 309, 310, 311, 311, 312, 313, 311, 311, 313, 312, 648, 648, 649, 649, 650, 650, 651, 651, 94, 95, 96, 97, 98, 99, 100, 101, 590, 591, 594, 595, 592, 593, 596, 597, 610, 611, 611, 610, 611, 610, 610, 611, 550, 551, 554, 555, 552, 553, 556, 557, 558, 558, 559, 560, 560, 559, 558, 558, 680, 681, 684, 685, 682, 683, 686, 687];
-pub const ENEMY_TILE_FLIPS: [bool; 432] = [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, false, false, false, false, false, true, false, false, false, false, false, true, false, false, false, false, false, true, false, false, false, false, false, false, false, false, true, true, false, true, true, false, true, false, true, false, true, true, true, false, true, false, true, true, false, false, false, true, false, false, false, false, false, true, false, false, false, false, false, true, false, false, false, false, false, true, false, false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, true, false, false, true, false, false, true, false, false, false, false, false, true, false, false, false, false, false, true, false, false, false, false, false, true, false, false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, true, false, true, true, false, true, false, false, true, false, false, false, true, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, true, false, false, false, false, false, false, true, true, false, true, true, false, true, false, true, true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false];
+pub const ENEMY_TILE_BIT_TABLE: [u8; 44] = [
+    0, 1, 2, 2, 3, 3, 4, 5, 0, 6, 7, 7, 8, 8, 8, 1, 1, 1, 1, 9, 9, 10, 10, 10, 11, 11, 11, 0, 0, 0,
+    12, 13, 3, 14, 13, 15, 16, 15, 16, 17, 0, 13, 17, 5,
+];
+pub const ENEMY_TILE_BITS: [u16; 144] = [
+    245, 246, 249, 250, 247, 248, 251, 252, 295, 296, 299, 300, 297, 298, 301, 302, 253, 253, 257,
+    257, 255, 255, 259, 259, 261, 262, 262, 261, 262, 261, 261, 262, 263, 263, 264, 264, 263, 263,
+    264, 264, 265, 265, 269, 270, 267, 267, 271, 272, 273, 274, 277, 278, 275, 276, 279, 280, 281,
+    282, 283, 284, 281, 282, 285, 286, 287, 288, 291, 292, 289, 290, 293, 294, 303, 304, 307, 308,
+    305, 306, 309, 310, 311, 311, 312, 313, 311, 311, 313, 312, 648, 648, 649, 649, 650, 650, 651,
+    651, 94, 95, 96, 97, 98, 99, 100, 101, 590, 591, 594, 595, 592, 593, 596, 597, 610, 611, 611,
+    610, 611, 610, 610, 611, 550, 551, 554, 555, 552, 553, 556, 557, 558, 558, 559, 560, 560, 559,
+    558, 558, 680, 681, 684, 685, 682, 683, 686, 687,
+];
+pub const ENEMY_TILE_FLIPS: [bool; 432] = [
+    false, false, false, false, false, false, false, false, false, false, false, false, false,
+    false, false, false, false, false, false, false, false, false, false, false, false, false,
+    false, false, false, false, false, false, false, false, false, false, false, false, false,
+    false, false, false, false, false, false, false, false, false, false, false, false, true,
+    false, false, false, false, false, true, false, false, false, false, false, true, false, false,
+    false, false, false, true, false, false, false, false, false, false, false, false, true, true,
+    false, true, true, false, true, false, true, false, true, true, true, false, true, false, true,
+    true, false, false, false, true, false, false, false, false, false, true, false, false, false,
+    false, false, true, false, false, false, false, false, true, false, false, false, false, false,
+    true, false, false, false, false, false, false, false, false, false, false, false, true, false,
+    false, false, false, false, false, false, false, false, false, false, false, false, false,
+    false, false, false, false, false, false, false, false, false, false, false, false, false,
+    false, false, false, false, false, false, false, false, false, false, false, false, false,
+    false, false, false, false, false, false, false, false, false, false, false, false, false,
+    false, false, false, false, false, false, false, false, false, false, false, false, false,
+    false, false, false, false, false, false, false, false, false, false, false, false, false,
+    false, false, false, false, false, false, false, false, false, false, false, false, false,
+    false, false, false, false, false, false, false, false, false, false, false, false, false,
+    false, false, true, false, false, false, false, false, false, false, false, false, false,
+    false, true, false, false, true, false, false, true, false, false, false, false, false, true,
+    false, false, false, false, false, true, false, false, false, false, false, true, false, false,
+    false, false, false, true, false, false, false, false, false, false, false, false, false,
+    false, false, false, false, false, false, false, false, false, false, false, false, false,
+    false, false, false, false, false, false, false, false, false, false, false, false, false,
+    false, false, false, false, false, false, false, false, false, false, false, false, false,
+    false, false, false, false, false, false, false, false, true, true, false, true, true, false,
+    true, false, false, true, false, false, false, true, false, false, true, false, false, false,
+    false, false, false, false, false, false, false, false, false, false, false, false, false,
+    false, false, false, false, false, false, false, false, false, false, false, false, false,
+    true, true, false, false, false, false, false, false, true, true, false, true, true, false,
+    true, false, true, true, true, false, false, false, false, false, false, false, false, false,
+    false, false, false, false, false, false, false, false, false, false, false, false, false,
+    false, false, false,
+];
 pub const ENEMY_PALETTES: [[u8; 4]; 88] = [
     [7, 24, 54, 64],
     [7, 24, 54, 64],
@@ -184,8 +304,15 @@ pub const ENEMY_PALETTES: [[u8; 4]; 88] = [
     [0, 38, 0, 64],
     [0, 38, 0, 64],
 ];
-pub const MAP_PALETTE_TABLE: [u8; 67] = [0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 2, 2, 1, 1, 1, 0, 2, 0, 2, 2, 3, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0];
-pub const MAP_PALETTES: [u8; 44] = [0, 2, 4, 0, 4, 5, 7, 9, 10, 14, 0, 15, 19, 0, 11, 7, 8, 13, 14, 11, 16, 6, 4, 20, 12, 0, 3, 17, 0, 23, 23, 18, 1, 21, 22, 28, 24, 25, 26, 0, 15, 15, 0, 27];
+pub const MAP_PALETTE_TABLE: [u8; 67] = [
+    0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 2, 2, 1, 1, 1, 0, 2, 0, 2, 2, 3, 4,
+    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+    0, 0, 0,
+];
+pub const MAP_PALETTES: [u8; 44] = [
+    0, 2, 4, 0, 4, 5, 7, 9, 10, 14, 0, 15, 19, 0, 11, 7, 8, 13, 14, 11, 16, 6, 4, 20, 12, 0, 3, 17,
+    0, 23, 23, 18, 1, 21, 22, 28, 24, 25, 26, 0, 15, 15, 0, 27,
+];
 pub const PALETTES: [[u8; 4]; 145] = [
     [13, 0, 16, 48],
     [13, 8, 24, 25],
@@ -470,4 +597,6 @@ pub const TILE_16S: [[u16; 4]; 66] = [
     [672, 673, 674, 675],
     [676, 677, 678, 67],
 ];
-pub const MAP_TILE_BITS: [u16; 16] = [2, 3, 18, 19, 32, 33, 48, 49, 92, 92, 92, 92, 672, 673, 674, 675];
+pub const MAP_TILE_BITS: [u16; 16] = [
+    2, 3, 18, 19, 32, 33, 48, 49, 92, 92, 92, 92, 672, 673, 674, 675,
+];

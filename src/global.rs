@@ -1,10 +1,10 @@
+use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
-use std::collections::HashMap;
 
-use num_enum::TryFromPrimitive;
-use serde::{Serialize, Deserialize};
 use enum_utils::IterVariants;
+use num_enum::TryFromPrimitive;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct GlobalSave {
@@ -12,7 +12,9 @@ pub struct GlobalSave {
     pub flags: HashMap<GlobalFlag, bool>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash, TryFromPrimitive, IterVariants)]
+#[derive(
+    Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash, TryFromPrimitive, IterVariants,
+)]
 #[repr(u8)]
 pub enum GlobalFlag {
     DefeatedConvergence,
@@ -72,7 +74,9 @@ pub fn decode() -> Result<(), Box<dyn Error>> {
 
     let sequence = data[..10].iter().map(|number| number.to_string()).collect();
 
-    let flags = GlobalFlag::iter().map(|flag| (flag, flag.has(data[flag as usize + 10]))).collect();
+    let flags = GlobalFlag::iter()
+        .map(|flag| (flag, flag.has(data[flag as usize + 10])))
+        .collect();
 
     let global_save = GlobalSave { sequence, flags };
     let out = serde_json::to_string_pretty(&global_save)?;

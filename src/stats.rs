@@ -1,6 +1,15 @@
-use std::{collections::{HashMap, HashSet}, path::Path, fs, error::Error};
+use std::{
+    collections::{HashMap, HashSet},
+    error::Error,
+    fs,
+    path::Path,
+};
 
-use crate::{map::{Map, self}, sprite::{Sprite, Collectible, Enemy}, util};
+use crate::{
+    map::{self, Map},
+    sprite::{Collectible, Enemy, Sprite},
+    util,
+};
 
 #[derive(Default)]
 struct SpriteStats {
@@ -15,11 +24,23 @@ pub fn map_stats(path: impl AsRef<Path>, maps: &[Map]) -> Result<(), Box<dyn Err
         for row in &map.sprites {
             for sprite in row.iter().flatten() {
                 match sprite.kind.into() {
-                    Sprite::Collectible(collectible) =>
-                        *sprite_stats.entry(map.identifier).or_insert_with(SpriteStats::default).collectibles.entry(collectible).or_insert(0u8) += 1,
-                    Sprite::Enemy(enemy) =>
-                        *sprite_stats.entry(map.identifier).or_insert_with(SpriteStats::default).enemies.entry(enemy).or_insert(0u8) += 1,
-                    _ => {},
+                    Sprite::Collectible(collectible) => {
+                        *sprite_stats
+                            .entry(map.identifier)
+                            .or_insert_with(SpriteStats::default)
+                            .collectibles
+                            .entry(collectible)
+                            .or_insert(0u8) += 1
+                    }
+                    Sprite::Enemy(enemy) => {
+                        *sprite_stats
+                            .entry(map.identifier)
+                            .or_insert_with(SpriteStats::default)
+                            .enemies
+                            .entry(enemy)
+                            .or_insert(0u8) += 1
+                    }
+                    _ => {}
                 }
             }
         }
@@ -37,32 +58,57 @@ pub fn map_stats(path: impl AsRef<Path>, maps: &[Map]) -> Result<(), Box<dyn Err
     let mut sprite_stats = Vec::from_iter(sprite_stats);
     sprite_stats.sort_unstable_by_key(|(map, _)| map::map_order_index(*map));
 
-    let collectibles_header = format!(", {}",
-        all_collectibles.iter()
+    let collectibles_header = format!(
+        ", {}",
+        all_collectibles
+            .iter()
             .map(|collectible| format!("{:?}", collectible))
-            .collect::<Vec<_>>().join(", ")
+            .collect::<Vec<_>>()
+            .join(", ")
     );
-    let collectibles_stats = sprite_stats.iter().map(|(map, stats)|
-        format!("{}, {}",
-            map::map_name(*map),
-            all_collectibles.iter()
-                .map(|collectible| stats.collectibles.get(collectible).cloned().unwrap_or(0).to_string())
-                .collect::<Vec<_>>().join(", ")
-        )
-    ).collect::<Vec<_>>().join("\n");
-    let enemies_header = format!(", {}",
-        all_enemies.iter()
+    let collectibles_stats = sprite_stats
+        .iter()
+        .map(|(map, stats)| {
+            format!(
+                "{}, {}",
+                map::map_name(*map),
+                all_collectibles
+                    .iter()
+                    .map(|collectible| stats
+                        .collectibles
+                        .get(collectible)
+                        .cloned()
+                        .unwrap_or(0)
+                        .to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    let enemies_header = format!(
+        ", {}",
+        all_enemies
+            .iter()
             .map(|enemy| format!("{:?}", enemy))
-            .collect::<Vec<_>>().join(", ")
+            .collect::<Vec<_>>()
+            .join(", ")
     );
-    let enemies_stats = sprite_stats.iter().map(|(map, stats)|
-        format!("{}, {}",
-            map::map_name(*map),
-            all_enemies.iter()
-                .map(|enemy| stats.enemies.get(enemy).cloned().unwrap_or(0).to_string())
-                .collect::<Vec<_>>().join(", ")
-        )
-    ).collect::<Vec<_>>().join("\n");
+    let enemies_stats = sprite_stats
+        .iter()
+        .map(|(map, stats)| {
+            format!(
+                "{}, {}",
+                map::map_name(*map),
+                all_enemies
+                    .iter()
+                    .map(|enemy| stats.enemies.get(enemy).cloned().unwrap_or(0).to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
 
     let collectibles_stats = format!("{}\n{}", collectibles_header, collectibles_stats);
     let enemies_stats = format!("{}\n{}", enemies_header, enemies_stats);

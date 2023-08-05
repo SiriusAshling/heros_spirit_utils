@@ -1,6 +1,6 @@
+use std::cmp::Ordering;
 use std::error::Error;
 use std::ops::RangeInclusive;
-use std::cmp::Ordering;
 
 use enum_utils::FromStr;
 
@@ -173,7 +173,18 @@ pub struct SpriteData {
     pub extra_bytes: Vec<u8>,
 }
 
-const ONE_BYTE_ID_RANGES: [RangeInclusive<u8>; 10] = [1..=13, 16..=25, 42..=103, 107..=143, 148..=160, 162..=189, 191..=192, 194..=196, 198..=213, 240..=250];
+const ONE_BYTE_ID_RANGES: [RangeInclusive<u8>; 10] = [
+    1..=13,
+    16..=25,
+    42..=103,
+    107..=143,
+    148..=160,
+    162..=189,
+    191..=192,
+    194..=196,
+    198..=213,
+    240..=250,
+];
 const TWO_BYTE_IDS: [u8; 2] = [105, 106];
 const THREE_BYTE_IDS: [u8; 3] = [15, 104, 161];
 const FIVE_BYTE_IDS: [u8; 6] = [0, 14, 147, 190, 193, 197];
@@ -191,17 +202,31 @@ impl SpriteData {
         let x = Self::read_step(sprite_data, index);
         let y = Self::read_step(sprite_data, index);
         let size = Self::size_of_kind(kind);
-        if size == 0 { Err(SimpleError("Unknown sprite"))? }
-        let extra_bytes = (1..size).map(|_| Self::read_step(sprite_data, index)).collect();
+        if size == 0 {
+            Err(SimpleError("Unknown sprite"))?
+        }
+        let extra_bytes = (1..size)
+            .map(|_| Self::read_step(sprite_data, index))
+            .collect();
         Ok((x, y, Self { kind, extra_bytes }))
     }
 
     pub fn size_of_kind(kind: u8) -> usize {
-        if ONE_BYTE_ID_RANGES.iter().any(|range| range.contains(&kind)) { 1 }
-        else if TWO_BYTE_IDS.contains(&kind) { 2 }
-        else if THREE_BYTE_IDS.contains(&kind) { 3 }
-        else if FIVE_BYTE_IDS.contains(&kind) || FIVE_BYTE_ID_RANGES.iter().any(|range| range.contains(&kind)) { 5 }
-        else { 0 }
+        if ONE_BYTE_ID_RANGES.iter().any(|range| range.contains(&kind)) {
+            1
+        } else if TWO_BYTE_IDS.contains(&kind) {
+            2
+        } else if THREE_BYTE_IDS.contains(&kind) {
+            3
+        } else if FIVE_BYTE_IDS.contains(&kind)
+            || FIVE_BYTE_ID_RANGES
+                .iter()
+                .any(|range| range.contains(&kind))
+        {
+            5
+        } else {
+            0
+        }
     }
 }
 

@@ -14,12 +14,14 @@ pub fn read_rom(path: impl AsRef<Path>) -> Result<Vec<NamedFile>, Box<dyn Error>
     let reader = BufReader::new(file);
     let mut archive = ZipArchive::new(reader)?;
 
-    (0..archive.len()).map(|index| {
-        let mut file = archive.by_index_decrypt(index, PASS)??;
-        let mut bytes = Vec::with_capacity(file.size() as usize);
-        file.read_to_end(&mut bytes)?;
-        Ok((file.name().to_owned(), bytes))
-    }).collect()
+    (0..archive.len())
+        .map(|index| {
+            let mut file = archive.by_index_decrypt(index, PASS)??;
+            let mut bytes = Vec::with_capacity(file.size() as usize);
+            file.read_to_end(&mut bytes)?;
+            Ok((file.name().to_owned(), bytes))
+        })
+        .collect()
 }
 
 pub fn write_rom(path: impl AsRef<Path>, files: Vec<NamedFile>) -> Result<(), Box<dyn Error>> {
@@ -32,5 +34,5 @@ pub fn write_rom(path: impl AsRef<Path>, files: Vec<NamedFile>) -> Result<(), Bo
         archive.write_all(&bytes)?;
     }
 
-  Ok(())
+    Ok(())
 }

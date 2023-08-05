@@ -1,4 +1,7 @@
-use crate::data::{MAP_PALETTE_TABLE, PALETTES, MAP_PALETTES, COLOR_TABLE, SPRITE_PALETTE_TABLE, SPRITE_PALETTES, ENEMY_PALETTES};
+use crate::data::{
+    COLOR_TABLE, ENEMY_PALETTES, MAP_PALETTES, MAP_PALETTE_TABLE, PALETTES, SPRITE_PALETTES,
+    SPRITE_PALETTE_TABLE,
+};
 use crate::map;
 
 pub const DEFAULT_PALETTE: [image::Rgba<u8>; 4] = [
@@ -12,7 +15,12 @@ fn lookup(color: u8) -> image::Rgba<u8> {
     image::Rgba(COLOR_TABLE[color as usize])
 }
 pub fn lookup_palette(colors: [u8; 4]) -> [image::Rgba<u8>; 4] {
-    [lookup(colors[0]), lookup(colors[1]), lookup(colors[2]), lookup(colors[3])]
+    [
+        lookup(colors[0]),
+        lookup(colors[1]),
+        lookup(colors[2]),
+        lookup(colors[3]),
+    ]
 }
 
 pub fn get_map_palette(index: usize, map: u8) -> [image::Rgba<u8>; 4] {
@@ -26,7 +34,9 @@ pub fn get_map_palette(index: usize, map: u8) -> [image::Rgba<u8>; 4] {
         };
 
         lookup_palette(colors)
-    } else { DEFAULT_PALETTE }
+    } else {
+        DEFAULT_PALETTE
+    }
 }
 
 pub fn get_sprite_palette(index: usize) -> [image::Rgba<u8>; 4] {

@@ -73,7 +73,7 @@ pub fn map_name(map: u8) -> &'static str {
         HAUNTED_MANSE => "HauntedManse",
         SMUGGLERS_ROAD => "SmugglersRoad",
         SMUGGLERS_RUIN => "SmugglersRuin",
-        _ => "Unknown"
+        _ => "Unknown",
     }
 }
 
@@ -112,7 +112,9 @@ const MAP_ORDER: [u8; 31] = [
 ];
 
 pub fn map_order_index(map: u8) -> usize {
-    MAP_ORDER.iter().enumerate()
+    MAP_ORDER
+        .iter()
+        .enumerate()
         .find(|(_, identifier)| map == **identifier)
         .map_or(usize::MAX, |(index, _)| index)
 }
@@ -181,12 +183,22 @@ pub fn decode_map(bytes: Vec<u8>) -> Result<Map, Box<dyn Error>> {
         sprites[y as usize][x as usize] = Some(sprite);
     }
 
-    Ok(Map { identifier, tiles, sprites })
+    Ok(Map {
+        identifier,
+        tiles,
+        sprites,
+    })
 }
 
 pub fn encode_map(map: Map) -> Vec<u8> {
     let tile_byte_count = map.tiles.iter().flatten().count();
-    let sprite_byte_count = map.sprites.iter().flatten().filter_map(|sprite| sprite.as_ref()).map(|sprite| 1 + sprite.extra_bytes.len()).sum::<usize>();
+    let sprite_byte_count = map
+        .sprites
+        .iter()
+        .flatten()
+        .filter_map(|sprite| sprite.as_ref())
+        .map(|sprite| 1 + sprite.extra_bytes.len())
+        .sum::<usize>();
     let mut bytes = Vec::with_capacity(3 + tile_byte_count + sprite_byte_count);
 
     bytes.push(map.identifier);
@@ -196,33 +208,44 @@ pub fn encode_map(map: Map) -> Vec<u8> {
     bytes.push(height as u8);
 
     bytes.extend(
-        map.tiles.into_iter().flat_map(|row|
-            row.into_iter().flat_map(|tile|
-                (0..7).map(move |index| tile & (1 << (6 - index)) != 0)
-            )
-        ).collect::<Vec<_>>().chunks(8).enumerate().map(|(index, bits)| {
-            let mut byte = 0;
-            let mut bits = bits.to_vec();
-            while bits.len() < 8 {
-                bits.push(false);
-            }
+        map.tiles
+            .into_iter()
+            .flat_map(|row| {
+                row.into_iter()
+                    .flat_map(|tile| (0..7).map(move |index| tile & (1 << (6 - index)) != 0))
+            })
+            .collect::<Vec<_>>()
+            .chunks(8)
+            .enumerate()
+            .map(|(index, bits)| {
+                let mut byte = 0;
+                let mut bits = bits.to_vec();
+                while bits.len() < 8 {
+                    bits.push(false);
+                }
 
-            for bit_index in (0..8).rev() {
-                let position = (10963 * map.identifier as usize + index * 8) % (1 + bit_index);
-                byte |= (bits.remove(position) as u8) << bit_index;
-            }
-            byte
-        })
+                for bit_index in (0..8).rev() {
+                    let position = (10963 * map.identifier as usize + index * 8) % (1 + bit_index);
+                    byte |= (bits.remove(position) as u8) << bit_index;
+                }
+                byte
+            }),
     );
 
     bytes.extend(
-        map.sprites.into_iter().enumerate().flat_map(|(y, row)|
-            row.into_iter().enumerate().filter_map(move |(x, sprite)| sprite.map(|sprite| (x, y, sprite)))
-        ).flat_map(|(x, y, sprite)| {
-            let mut bytes = vec![sprite.kind, x as u8, y as u8];
-            bytes.extend(sprite.extra_bytes);
-            bytes
-        })
+        map.sprites
+            .into_iter()
+            .enumerate()
+            .flat_map(|(y, row)| {
+                row.into_iter()
+                    .enumerate()
+                    .filter_map(move |(x, sprite)| sprite.map(|sprite| (x, y, sprite)))
+            })
+            .flat_map(|(x, y, sprite)| {
+                let mut bytes = vec![sprite.kind, x as u8, y as u8];
+                bytes.extend(sprite.extra_bytes);
+                bytes
+            }),
     );
 
     bytes

@@ -1,5 +1,5 @@
-use std::fmt::{self, Debug, Display};
 use std::error::Error;
+use std::fmt::{self, Debug, Display};
 
 #[derive(Debug)]
 pub struct SimpleError<D: Display + Debug>(pub D);

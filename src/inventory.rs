@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 macro_rules! inventory_struct {
     (@start $field:ident, $($fields:ident),*) => {
@@ -355,7 +355,14 @@ impl Inventory {
             self.rdragon_killed,
             self.bunny_crime_scene,
             self.fairyland_locks,
-            self.greenfight_lock_1 + self.greenfight_lock_2 + self.greenfight_lock_3 + self.greenfight_lock_4 + self.greenfight_lock_5 + self.greenfight_lock_6 + self.greenfight_lock_7 + self.greenfight_lock_8,
+            self.greenfight_lock_1
+                + self.greenfight_lock_2
+                + self.greenfight_lock_3
+                + self.greenfight_lock_4
+                + self.greenfight_lock_5
+                + self.greenfight_lock_6
+                + self.greenfight_lock_7
+                + self.greenfight_lock_8,
             self.back_door_lock_1,
             self.back_door_lock_2,
             self.completion_swamp,

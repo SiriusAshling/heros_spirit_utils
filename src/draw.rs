@@ -2,14 +2,14 @@ use std::error::Error;
 use std::ops::{Deref, DerefMut};
 use std::path::Path;
 
-use image::{RgbaImage, ImageFormat, ImageBuffer, Pixel, Rgba};
+use image::{ImageBuffer, ImageFormat, Pixel, Rgba, RgbaImage};
 
-use crate::graphics::{Tile8, TileData, Tile16, Tile8Data};
-use crate::palette::{DEFAULT_PALETTE, self};
-use crate::data::{TERRAIN_FLAGS, BRIGHT_MAPS, MAP_PALETTES};
-use crate::sprite::{Sprite, Collectible, Enemy, Things, Door};
-use crate::map::{Map, self};
+use crate::data::{BRIGHT_MAPS, MAP_PALETTES, TERRAIN_FLAGS};
 use crate::error::SimpleError;
+use crate::graphics::{Tile16, Tile8, Tile8Data, TileData};
+use crate::map::{self, Map};
+use crate::palette::{self, DEFAULT_PALETTE};
+use crate::sprite::{Collectible, Door, Enemy, Sprite, Things};
 
 const TILE8_ROW_LENGTH: u32 = 16;
 
@@ -21,8 +21,7 @@ fn draw_tile8<P, Container>(
     xoffset: u32,
     yoffset: u32,
     blend: bool,
-)
-where
+) where
     P: Pixel + 'static,
     P::Subpixel: 'static,
     Container: Deref<Target = [P::Subpixel]> + DerefMut,
@@ -38,12 +37,8 @@ where
     for (y, row) in tile8.iter().enumerate() {
         for (x, pixel) in row.iter().enumerate() {
             let pixel = palette[*pixel as usize];
-            let mut x =
-            if *flipx { 7 - x }
-            else { x } as u32;
-            let mut y =
-            if *flipy { 7 - y }
-            else { y } as u32;
+            let mut x = if *flipx { 7 - x } else { x } as u32;
+            let mut y = if *flipy { 7 - y } else { y } as u32;
             if *rotate {
                 std::mem::swap(&mut x, &mut y);
             }
@@ -67,8 +62,7 @@ fn draw_tile16<P, Container>(
     xoffset: u32,
     yoffset: u32,
     blend: bool,
-)
-where
+) where
     P: Pixel + 'static,
     P::Subpixel: 'static,
     Container: Deref<Target = [P::Subpixel]> + DerefMut,
@@ -77,7 +71,15 @@ where
         let tile_xoffset = xoffset + if tile_index % 2 == 1 { 8 } else { 0 };
         let tile_yoffset = yoffset + if tile_index > 1 { 8 } else { 0 };
 
-        draw_tile8(tile8_list, tile8, palette, image, tile_xoffset, tile_yoffset, blend);
+        draw_tile8(
+            tile8_list,
+            tile8,
+            palette,
+            image,
+            tile_xoffset,
+            tile_yoffset,
+            blend,
+        );
     }
 }
 
@@ -91,9 +93,20 @@ pub fn draw_tile8s(path: impl AsRef<Path>, tile8_list: &[Tile8Data]) -> Result<(
         let xoffset = index % TILE8_ROW_LENGTH * 8;
         let yoffset = index / TILE8_ROW_LENGTH * 8;
 
-        let tile8 = Tile8 { index: index as u16, ..Tile8::default() };
+        let tile8 = Tile8 {
+            index: index as u16,
+            ..Tile8::default()
+        };
 
-        draw_tile8(tile8_list, &tile8, DEFAULT_PALETTE, &mut image, xoffset, yoffset, false);
+        draw_tile8(
+            tile8_list,
+            &tile8,
+            DEFAULT_PALETTE,
+            &mut image,
+            xoffset,
+            yoffset,
+            false,
+        );
     }
 
     image.save(path)?;
@@ -103,17 +116,39 @@ pub fn draw_tile8s(path: impl AsRef<Path>, tile8_list: &[Tile8Data]) -> Result<(
 
 pub fn undraw_tile8s(path: impl AsRef<Path>) -> Result<Vec<Tile8Data>, Box<dyn Error>> {
     let image = image::open(path)?;
-    let tile8_list = image.into_rgba8().pixels().collect::<Vec<_>>().chunks(8 * TILE8_ROW_LENGTH as usize).collect::<Vec<_>>().chunks(8).flat_map(|tile8_row| {
-        (0..TILE8_ROW_LENGTH as usize).map(|index|
-            tile8_row.iter().map(|pixel_row|
-                pixel_row[index * 8..(index + 1) * 8].iter().map(|pixel|
-                    DEFAULT_PALETTE.iter().enumerate().find_map(|(index, default_pixel)|
-                        if *pixel == default_pixel { Some(index as u8) } else { None }
-                    ).ok_or(SimpleError("Invalid pixel color in tile8s"))
-                ).collect()
-            ).collect()
-        )
-    }).collect::<Result<_, _>>()?;
+    let tile8_list = image
+        .into_rgba8()
+        .pixels()
+        .collect::<Vec<_>>()
+        .chunks(8 * TILE8_ROW_LENGTH as usize)
+        .collect::<Vec<_>>()
+        .chunks(8)
+        .flat_map(|tile8_row| {
+            (0..TILE8_ROW_LENGTH as usize).map(|index| {
+                tile8_row
+                    .iter()
+                    .map(|pixel_row| {
+                        pixel_row[index * 8..(index + 1) * 8]
+                            .iter()
+                            .map(|pixel| {
+                                DEFAULT_PALETTE
+                                    .iter()
+                                    .enumerate()
+                                    .find_map(|(index, default_pixel)| {
+                                        if *pixel == default_pixel {
+                                            Some(index as u8)
+                                        } else {
+                                            None
+                                        }
+                                    })
+                                    .ok_or(SimpleError("Invalid pixel color in tile8s"))
+                            })
+                            .collect()
+                    })
+                    .collect()
+            })
+        })
+        .collect::<Result<_, _>>()?;
 
     Ok(tile8_list)
 }
@@ -124,7 +159,15 @@ pub fn draw_tile16s(path: impl AsRef<Path>, tile_data: &TileData) -> Result<(), 
     for (index, tile16) in tile_data.map_tile16_list.iter().enumerate() {
         let mut image: RgbaImage = ImageBuffer::new(16, 16);
 
-        draw_tile16(&tile_data.tile8_list, tile16, DEFAULT_PALETTE, &mut image, 0, 0, false);
+        draw_tile16(
+            &tile_data.tile8_list,
+            tile16,
+            DEFAULT_PALETTE,
+            &mut image,
+            0,
+            0,
+            false,
+        );
 
         let mut tile16_path = path.clone();
         tile16_path.push(format!("map_{}.png", index + 1));
@@ -134,7 +177,15 @@ pub fn draw_tile16s(path: impl AsRef<Path>, tile_data: &TileData) -> Result<(), 
         let mut image: RgbaImage = ImageBuffer::new(16, 16);
 
         let palette = palette::get_sprite_palette(index);
-        draw_tile16(&tile_data.tile8_list, tile16, palette, &mut image, 0, 0, false);
+        draw_tile16(
+            &tile_data.tile8_list,
+            tile16,
+            palette,
+            &mut image,
+            0,
+            0,
+            false,
+        );
 
         let mut tile16_path = path.clone();
         tile16_path.push(format!("sprite_{}.png", index));
@@ -144,7 +195,15 @@ pub fn draw_tile16s(path: impl AsRef<Path>, tile_data: &TileData) -> Result<(), 
         let mut image: RgbaImage = ImageBuffer::new(16, 16);
 
         let palette = palette::get_enemy_palette(index);
-        draw_tile16(&tile_data.tile8_list, tile16, palette, &mut image, 0, 0, false);
+        draw_tile16(
+            &tile_data.tile8_list,
+            tile16,
+            palette,
+            &mut image,
+            0,
+            0,
+            false,
+        );
 
         let mut tile16_path = path.clone();
         tile16_path.push(format!("enemy_{}.png", index));
@@ -161,14 +220,28 @@ pub fn draw_map(map: Map, tile_data: &TileData) -> RgbaImage {
 
     for (y, row) in map.tiles.into_iter().enumerate() {
         for (x, tile) in row.into_iter().enumerate() {
-            draw_tile_onto(tile, x as u32, y as u32, map.identifier, tile_data, &mut image);
+            draw_tile_onto(
+                tile,
+                x as u32,
+                y as u32,
+                map.identifier,
+                tile_data,
+                &mut image,
+            );
         }
     }
 
     for (y, row) in map.sprites.into_iter().enumerate() {
         for (x, sprite) in row.into_iter().enumerate() {
             if let Some(sprite) = sprite {
-                draw_sprite_onto(sprite.kind.into(), x as u32, y as u32, map.identifier, tile_data, &mut image);
+                draw_sprite_onto(
+                    sprite.kind.into(),
+                    x as u32,
+                    y as u32,
+                    map.identifier,
+                    tile_data,
+                    &mut image,
+                );
             }
         }
     }
@@ -176,7 +249,14 @@ pub fn draw_map(map: Map, tile_data: &TileData) -> RgbaImage {
     image
 }
 
-fn draw_tile_onto(tile: u8, x: u32, y: u32, map_id: u8, tile_data: &TileData, image: &mut RgbaImage) {
+fn draw_tile_onto(
+    tile: u8,
+    x: u32,
+    y: u32,
+    map_id: u8,
+    tile_data: &TileData,
+    image: &mut RgbaImage,
+) {
     let mut tile = tile as usize;
 
     let tile_flags = if map_id == map::GLITCH as u8 {
@@ -193,14 +273,37 @@ fn draw_tile_onto(tile: u8, x: u32, y: u32, map_id: u8, tile_data: &TileData, im
         let passage = tile_flags & 0b00010010 == 0b00010010;
         let palette = palette::get_map_palette(tile, map_id);
 
-        draw_tile16(&tile_data.tile8_list, tile16, palette, image, pixel_x, pixel_y, false);
+        draw_tile16(
+            &tile_data.tile8_list,
+            tile16,
+            palette,
+            image,
+            pixel_x,
+            pixel_y,
+            false,
+        );
 
         if passage {
-            draw_tile8(&tile_data.tile8_list, &Tile8::from(825), DEFAULT_PALETTE, image, pixel_x + 4, pixel_y + 4, false);
+            draw_tile8(
+                &tile_data.tile8_list,
+                &Tile8::from(825),
+                DEFAULT_PALETTE,
+                image,
+                pixel_x + 4,
+                pixel_y + 4,
+                false,
+            );
         }
     }
 }
-fn draw_map_sprite_tile_onto(tile: u8, x: u32, y: u32, map_id: u8, tile_data: &TileData, image: &mut RgbaImage) {
+fn draw_map_sprite_tile_onto(
+    tile: u8,
+    x: u32,
+    y: u32,
+    map_id: u8,
+    tile_data: &TileData,
+    image: &mut RgbaImage,
+) {
     let index = (tile * 29 + MAP_PALETTES[map_id as usize]) as usize;
 
     if let Some(tile16) = tile_data.map_sprite_tile16_list.get(index) {
@@ -209,11 +312,26 @@ fn draw_map_sprite_tile_onto(tile: u8, x: u32, y: u32, map_id: u8, tile_data: &T
 
         let palette = palette::get_map_sprite_palette((tile == 1) as u8, index);
 
-        draw_tile16(&tile_data.tile8_list, tile16, palette, image, pixel_x, pixel_y, false);
+        draw_tile16(
+            &tile_data.tile8_list,
+            tile16,
+            palette,
+            image,
+            pixel_x,
+            pixel_y,
+            false,
+        );
     }
 }
 
-fn draw_sprite_onto(sprite: Sprite, x: u32, y: u32, map_id: u8, tile_data: &TileData, image: &mut RgbaImage) {
+fn draw_sprite_onto(
+    sprite: Sprite,
+    x: u32,
+    y: u32,
+    map_id: u8,
+    tile_data: &TileData,
+    image: &mut RgbaImage,
+) {
     let pixel_x = x * 16;
     let pixel_y = y * 16;
 
@@ -231,17 +349,27 @@ fn draw_sprite_onto(sprite: Sprite, x: u32, y: u32, map_id: u8, tile_data: &Tile
                 let mut index = 561;
                 for tile8_y in 0..4 {
                     for tile8_x in 0..6 {
-                        if tile8_y == 0 && (tile8_x == 0 || tile8_x > 3) { continue }
+                        if tile8_y == 0 && (tile8_x == 0 || tile8_x > 3) {
+                            continue;
+                        }
                         let tile8 = Tile8::from(index);
                         let xoffset = pixel_x + tile8_x * 8;
                         let yoffset = pixel_y + tile8_y * 8;
-                        draw_tile8(&tile_data.tile8_list, &tile8, palette, image, xoffset, yoffset, true);
+                        draw_tile8(
+                            &tile_data.tile8_list,
+                            &tile8,
+                            palette,
+                            image,
+                            xoffset,
+                            yoffset,
+                            true,
+                        );
                         index += 1;
                     }
                 }
 
                 return;
-            },
+            }
             Enemy::Basilisk => {
                 let palette = palette::lookup_palette([7, 22, 23, 64]);
                 let mut index = 582;
@@ -250,20 +378,30 @@ fn draw_sprite_onto(sprite: Sprite, x: u32, y: u32, map_id: u8, tile_data: &Tile
                         let tile8 = Tile8::from(index);
                         let xoffset = pixel_x + tile8_x * 8;
                         let yoffset = pixel_y + tile8_y * 8;
-                        draw_tile8(&tile_data.tile8_list, &tile8, palette, image, xoffset, yoffset, true);
+                        draw_tile8(
+                            &tile_data.tile8_list,
+                            &tile8,
+                            palette,
+                            image,
+                            xoffset,
+                            yoffset,
+                            true,
+                        );
                         index += 1;
                     }
                 }
 
                 return;
-            },
+            }
             // Enemy::Ragnarok => 20,
             // Enemy::EvilBunny => 42,
             // Enemy::DarkGhost => 43,
             _ => enemy as usize,
-        }
+        },
         Sprite::Collectible(collectible) => match collectible {
-            Collectible::Sword | Collectible::SilverKey if BRIGHT_MAPS.contains(&map_id) => collectible as usize + 18,
+            Collectible::Sword | Collectible::SilverKey if BRIGHT_MAPS.contains(&map_id) => {
+                collectible as usize + 18
+            }
             Collectible::PossumCoin => 100,
             _ => collectible as usize + 17,
         },
@@ -275,35 +413,51 @@ fn draw_sprite_onto(sprite: Sprite, x: u32, y: u32, map_id: u8, tile_data: &Tile
             Things::CompassWall => {
                 draw_tile_onto(16, x, y, map_id, tile_data, image);
                 30
-            },
+            }
             Things::NGMountain => {
                 draw_tile_onto(16, x, y, map_id, tile_data, image);
                 21
-            },
+            }
             Things::NGPMountain => {
                 draw_tile_onto(16, x, y, map_id, tile_data, image);
                 109
-            },
+            }
             Things::NGPBoulder => {
                 draw_sprite_onto(Sprite::Door(Door::Boulder), x, y, map_id, tile_data, image);
                 109
-            },
+            }
             Things::NGPWall => {
                 draw_map_sprite_tile_onto(3, x, y, map_id, tile_data, image);
                 109
-            },
+            }
             Things::NGPTransfer => {
                 draw_tile_onto(7, x, y, map_id, tile_data, image);
                 109
-            },
+            }
             Things::UnderworldKeyhole => 84,
         },
         Sprite::Other(_) => return,
     };
 
-    let tile16 = &if is_enemy { &tile_data.enemy_tile16_list } else { &tile_data.sprite_tile16_list } [sprite_index];
-    let palette = if is_enemy { palette::get_enemy_palette } else { palette::get_sprite_palette } (sprite_index);
-    draw_tile16(&tile_data.tile8_list, tile16, palette, image, pixel_x, pixel_y, true);
+    let tile16 = &if is_enemy {
+        &tile_data.enemy_tile16_list
+    } else {
+        &tile_data.sprite_tile16_list
+    }[sprite_index];
+    let palette = if is_enemy {
+        palette::get_enemy_palette
+    } else {
+        palette::get_sprite_palette
+    }(sprite_index);
+    draw_tile16(
+        &tile_data.tile8_list,
+        tile16,
+        palette,
+        image,
+        pixel_x,
+        pixel_y,
+        true,
+    );
 }
 
 pub fn draw_tile(tile: u8, map_id: u8, tile_data: &TileData) -> RgbaImage {
@@ -335,7 +489,9 @@ pub fn merge_maps(maps: Vec<(u8, RgbaImage)>) -> Result<RgbaImage, Box<dyn Error
 
     for (identifier, map) in maps {
         let (x_offset, mut y) = map_offset(identifier);
-        if x_offset + y == 0 { continue }
+        if x_offset + y == 0 {
+            continue;
+        }
 
         for row in map.rows() {
             let mut x = x_offset;

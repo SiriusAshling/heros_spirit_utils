@@ -1,8 +1,8 @@
 use std::error::Error;
 
 use crate::error::SimpleError;
-use crate::map::{self, Map};
 use crate::graphics::{self, TileData};
+use crate::map::{self, Map};
 use crate::zip::NamedFile;
 
 pub struct Rom {
@@ -37,5 +37,12 @@ pub fn decode(files: Vec<(String, Vec<u8>)>) -> Result<Rom, Box<dyn Error>> {
     let tile8_list = tile8_list.ok_or(SimpleError("Failed to find graphics file in ROM"))?;
     let tile_data = TileData::from(tile8_list);
 
-    Ok(Rom { tile_data, images, maps, sounds, music, shaders })
+    Ok(Rom {
+        tile_data,
+        images,
+        maps,
+        sounds,
+        music,
+        shaders,
+    })
 }
