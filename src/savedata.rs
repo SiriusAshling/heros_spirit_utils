@@ -1,13 +1,13 @@
 use std::error::Error;
 use std::iter;
 use std::path::Path;
-use std::{fs, cmp::min};
+use std::{cmp::min, fs};
 
 use num_enum::FromPrimitive;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
+use crate::data::{DEOBF, OBF};
 use crate::inventory::Inventory;
-use crate::data::{OBF, DEOBF};
 
 #[derive(Serialize, Deserialize)]
 pub struct SaveDat {
@@ -17,6 +17,7 @@ pub struct SaveDat {
     pub flags: serde_json::Value,
     pub playtime: usize,
     pub deaths: usize,
+    pub kills: usize,
     pub label: String,
 }
 
@@ -40,7 +41,10 @@ pub struct Position {
 }
 impl Position {
     pub fn encode(&self) -> String {
-        format!("{}.{}.{}.{}", self.map as u8, self.x, self.y, self.direction as u8)
+        format!(
+            "{}.{}.{}.{}",
+            self.map as u8, self.x, self.y, self.direction as u8
+        )
     }
 }
 
@@ -53,6 +57,7 @@ pub struct SavePretty {
     pub flags: serde_json::Value,
     pub playtime: usize,
     pub deaths: usize,
+    pub kills: usize,
     pub label: String,
 }
 
@@ -170,6 +175,13 @@ fn unscramble(mut data: String) -> Result<(usize, SaveDat), Box<dyn Error>> {
         }
     }
 
+    fs::write(
+        "temp.json",
+        serde_json::from_str::<'_, serde_json::value::Value>(&second_iteration[..end])
+            .unwrap()
+            .to_string(),
+    )
+    .unwrap();
     Ok((steps, serde_json::from_str(&second_iteration[..end])?))
 }
 
@@ -201,13 +213,31 @@ fn scramble(steps: usize, data: SaveDat) -> Result<String, Box<dyn Error>> {
 pub fn decode(path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
     let data = fs::read_to_string(&path)?;
     let (steps, savedat) = unscramble(data)?;
+    let SaveDat {
+        position,
+        values,
+        hearts,
+        flags,
+        playtime,
+        deaths,
+        kills,
+        label,
+    } = savedat;
 
     // position
-    let mut position_parts = savedat.position.split('.');
-    let map = position_parts.next().ok_or("malformed data")?.parse::<u8>()?;
+    let mut position_parts = position.split('.');
+    let map = position_parts
+        .next()
+        .ok_or("malformed data")?
+        .parse::<u8>()?;
     let x = position_parts.next().ok_or("malformed data")?.parse()?;
     let y = position_parts.next().ok_or("malformed data")?.parse()?;
-    let direction = Direction::from(position_parts.next().ok_or("malformed data")?.parse::<u8>()?);
+    let direction = Direction::from(
+        position_parts
+            .next()
+            .ok_or("malformed data")?
+            .parse::<u8>()?,
+    );
     let position = Position {
         map,
         x,
@@ -216,19 +246,23 @@ pub fn decode(path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
     };
 
     // values
-    let mut values = base64::decode(savedat.values)?;
-    values = values.into_iter().map(|value| DEOBF[value as usize]).collect();
+    let mut values = base64::decode(values)?;
+    values = values
+        .into_iter()
+        .map(|value| DEOBF[value as usize])
+        .collect();
     let inventory = Inventory::from(values);
 
     let pretty = SavePretty {
         steps,
         position,
         inventory,
-        hearts: savedat.hearts,
-        flags: savedat.flags,
-        playtime: savedat.playtime,
-        deaths: savedat.deaths,
-        label: savedat.label,
+        hearts,
+        flags,
+        playtime,
+        deaths,
+        kills,
+        label,
     };
 
     let out = serde_json::to_string_pretty(&pretty)?;
@@ -236,7 +270,12 @@ pub fn decode(path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
     let mut path = path.as_ref().with_extension("json");
     fs::write(&path, out)?;
 
-    let mut completion_column = pretty.inventory.into_completion_column().into_iter().map(|value| value.to_string()).collect::<Vec<_>>();
+    let mut completion_column = pretty
+        .inventory
+        .into_completion_column()
+        .into_iter()
+        .map(|value| value.to_string())
+        .collect::<Vec<_>>();
     path.set_extension("completion");
     fs::write(&path, completion_column.join("\n"))?;
 
@@ -251,12 +290,35 @@ pub fn encode(path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
     let read_path = path.as_ref().with_extension("json");
     let data = fs::read_to_string(&read_path)?;
 
-    let SavePretty { steps, position, inventory, hearts, flags, playtime, deaths, label } = serde_json::from_str(&data)?;
-    let values = inventory.into_vec().into_iter().map(|value| OBF[value as usize]).collect::<Vec<_>>();
+    let SavePretty {
+        steps,
+        position,
+        inventory,
+        hearts,
+        flags,
+        playtime,
+        deaths,
+        kills,
+        label,
+    } = serde_json::from_str(&data)?;
+    let values = inventory
+        .into_vec()
+        .into_iter()
+        .map(|value| OBF[value as usize])
+        .collect::<Vec<_>>();
     let values = base64::encode(values);
     let position = position.encode();
 
-    let savedat = SaveDat { position, values, hearts, flags, playtime, deaths, label };
+    let savedat = SaveDat {
+        position,
+        values,
+        hearts,
+        flags,
+        playtime,
+        deaths,
+        kills,
+        label,
+    };
 
     let out = scramble(steps, savedat)?;
     fs::write(path, out)?;
