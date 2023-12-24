@@ -1,128 +1,132 @@
-#![recursion_limit = "256"]
+mod feedback;
+mod files;
+mod saves;
 
-mod data;
-mod draw;
-mod error;
-mod export;
-mod global;
-mod graphics;
-mod import;
-mod inventory;
-mod map;
-mod palette;
-mod rom;
-mod savedata;
-mod sprite;
-mod stats;
-mod tiled;
-mod util;
-mod zip;
+use std::{error::Error, path::PathBuf};
 
 use clap::{Parser, Subcommand};
+use strum::{Display, EnumIter, IntoEnumIterator};
+
+fn main() {
+    let args = Cli::parse();
+    args.command.execute();
+}
+
+type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 #[derive(Parser)]
-#[clap(version, about)]
-struct Args {
-    #[clap(subcommand)]
+#[command(author, version, about)]
+struct Cli {
+    #[command(subcommand)]
     command: Command,
 }
 #[derive(Subcommand)]
 enum Command {
-    /// Exports the rom and save files into formats suitable for viewing and editing
+    /// Export data into viewable formats ("help export" for more information)
     ///
-    /// Will search for "rom", "savedata", "savedatb" and "savedatc" in the current directory and operate on all files it can find
-    Export,
-    /// Reimport the files exported earlier into a rom
-    Import,
+    /// If [Command] is not specified, everything is exported
+    Export {
+        #[command(subcommand)]
+        export_command: Option<ExportCommand>,
+    },
+    /// Import data from the exported formats ("help import" for more information)
+    ///
+    /// If [Command] is not specified, everything is imported
+    Import {
+        #[command(subcommand)]
+        import_command: Option<ImportCommand>,
+    },
+}
+#[derive(Subcommand, EnumIter, Display)]
+enum ExportCommand {
+    /// Export saves ("help export saves" for more information)
+    Saves {
+        /// Saves Folder.
+        /// Defaults to the current working directory.
+        /// Vanilla saves will be searched in <FOLDER> and exported saves will be stored in <FOLDER>/export
+        #[arg(short, long)]
+        folder: Option<PathBuf>,
+        /// Names of saves to export, e.g. "game0", "global".
+        /// If no names are specified, all saves are exported
+        names: Vec<String>,
+    },
+}
+#[derive(Subcommand, EnumIter, Display)]
+enum ImportCommand {
+    /// Import saves ("help import saves" for more information)
+    Saves {
+        /// Saves Folder.
+        /// Defaults to the current working directory.
+        /// Saves to import will be searched in <FOLDER>/export and created vanilla saves will be stored in <FOLDER>
+        #[arg(short, long)]
+        folder: Option<PathBuf>,
+        /// Names of saves to import, e.g. "game0", "global"
+        /// If no names are specified, all saves are imported
+        names: Vec<String>,
+    },
 }
 
-fn main() {
-    let args = Args::parse();
-
-    match args.command {
-        Command::Export => export(),
-        Command::Import => import(),
+trait Execute {
+    fn execute(self);
+}
+impl<T> Execute for Option<T>
+where
+    T: Execute + IntoEnumIterator,
+{
+    fn execute(self) {
+        match self {
+            None => {
+                execute_iter(T::iter());
+            }
+            Some(t) => t.execute(),
+        }
     }
 }
-
-fn export() {
-    util::feedback("Export savedata", savedata::decode("savedata"));
-    util::feedback("Export savedatb", savedata::decode("savedatb"));
-    util::feedback("Export savedatc", savedata::decode("savedatc"));
-    util::feedback("Export global save", global::decode());
-
-    util::feedback_and_then(
-        "Read rom",
-        zip::read_rom("rom").and_then(rom::decode),
-        |rom| {
-            util::feedback("Gather stats", stats::map_stats("stats", &rom.maps));
-            util::feedback(
-                "Export graphics",
-                export::export_tilesets("rom_files/graphics", &rom.tile_data)
-                    .and_then(|()| export::export_files("rom_files/graphics", &rom.images, "bmp")),
-            );
-            util::feedback(
-                "Export audio",
-                export::export_files("rom_files/sounds", &rom.sounds, "ogg")
-                    .and_then(|()| export::export_files("rom_files/music", &rom.music, "ogg")),
-            );
-            util::feedback(
-                "Export shaders",
-                export::export_files("rom_files/shaders", &rom.shaders, ""),
-            );
-            util::feedback(
-                "Export maps",
-                export::export_maps("rom_files/maps", &rom.maps, &rom.tile_data),
-            );
-
-            let maps = rom
-                .maps
-                .into_iter()
-                .map(|map| {
-                    let identifier = map.identifier;
-                    let map = draw::draw_map(map, &rom.tile_data);
-                    util::feedback(
-                        format!("Draw map {}", map::map_name(identifier)),
-                        export::export_map_image("rom_files/maps/images", identifier, &map),
-                    );
-                    (identifier, map)
-                })
-                .collect();
-            util::feedback(
-                "Draw world map",
-                draw::merge_maps(maps).and_then(|map| export::export_full_map_image(&map)),
-            );
-        },
-    );
+// TODO unused
+impl<T> Execute for Vec<T>
+where
+    T: Execute + IntoEnumIterator,
+{
+    fn execute(self) {
+        if self.is_empty() {
+            execute_iter(T::iter());
+        } else {
+            execute_iter(self);
+        }
+    }
 }
-
-fn import() {
-    util::feedback("Import savedata", savedata::encode("savedata"));
-    util::feedback("Import savedatb", savedata::encode("savedatb"));
-    util::feedback("Import savedatc", savedata::encode("savedatc"));
-
-    let mut files = Vec::new();
-
-    util::feedback(
-        "Import graphics",
-        import::import_tilesets("rom_files/graphics", &mut files)
-            .and_then(|()| import::import_files("rom_files/graphics", &mut files, "bmp")),
-    );
-    util::feedback(
-        "Import audio",
-        import::import_files("rom_files/sounds", &mut files, "ogg")
-            .and_then(|()| import::import_files("rom_files/music", &mut files, "ogg")),
-    );
-    util::feedback(
-        "Import shaders",
-        import::import_files("rom_files/shaders", &mut files, ""),
-    );
-    util::feedback(
-        "Import maps",
-        import::import_maps("rom_files/maps", &mut files),
-    );
-
-    if !files.is_empty() {
-        util::feedback("Write rom", zip::write_rom("rom", files));
+fn execute_iter<I>(i: I)
+where
+    I: IntoIterator,
+    I::Item: Execute,
+{
+    for t in i {
+        t.execute();
+    }
+}
+impl Execute for Command {
+    fn execute(self) {
+        match self {
+            Command::Export { export_command } => export_command.execute(),
+            Command::Import { import_command } => import_command.execute(),
+        }
+    }
+}
+impl Execute for ExportCommand {
+    fn execute(self) {
+        match self {
+            ExportCommand::Saves { folder, names } => {
+                saves::export_saves(folder.unwrap_or_default(), names)
+            }
+        }
+    }
+}
+impl Execute for ImportCommand {
+    fn execute(self) {
+        match self {
+            ImportCommand::Saves { folder, names } => {
+                saves::import_saves(folder.unwrap_or_default(), names)
+            }
+        }
     }
 }
