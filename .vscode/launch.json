@@ -1,64 +1,45 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug export",
-            "cargo": {
-                "args": [
-                    "build",
-                    "--bin=heros_spirit_utils",
-                    "--package=heros_spirit_utils"
-                ],
-                "filter": {
-                    "name": "heros_spirit_utils",
-                    "kind": "bin"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug import",
-            "cargo": {
-                "args": [
-                    "build",
-                    "--bin=heros_spirit_utils",
-                    "--package=heros_spirit_utils"
-                ],
-                "filter": {
-                    "name": "heros_spirit_utils",
-                    "kind": "bin"
-                }
-            },
-            "args": ["import"],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug unit tests in executable 'heros_spirit_utils'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--bin=heros_spirit_utils",
-                    "--package=heros_spirit_utils"
-                ],
-                "filter": {
-                    "name": "heros_spirit_utils",
-                    "kind": "bin"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug",
+      "cargo": {
+        "args": [
+          "build",
+          "--bin=heros_spirit_utils",
+          "--package=heros_spirit_utils"
+        ],
+        "filter": {
+          "name": "heros_spirit_utils",
+          "kind": "bin"
         }
-    ]
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in executable 'heros_spirit_utils'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--bin=heros_spirit_utils",
+          "--package=heros_spirit_utils"
+        ],
+        "filter": {
+          "name": "heros_spirit_utils",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    }
+  ]
 }

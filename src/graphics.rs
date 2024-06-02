@@ -2,6 +2,8 @@ use crate::data::{
     ENEMY_TILE_BITS, ENEMY_TILE_BIT_TABLE, ENEMY_TILE_FLIPS, MAP_TILE_BITS, SPRITE_TILE_BITS,
     SPRITE_TILE_BIT_TABLE, SPRITE_TILE_FLIPS, SPRITE_TILE_FLIP_TABLE, TILE_16S,
 };
+use crate::Result;
+use crate::rom::{self, RomReader};
 
 pub struct TileData {
     pub tile8_list: Vec<Tile8Data>,
@@ -13,15 +15,18 @@ pub struct TileData {
 
 pub type Tile8Data = Vec<Vec<u8>>;
 
-impl From<Vec<Tile8Data>> for TileData {
-    fn from(tile8_list: Vec<Tile8Data>) -> Self {
-        Self {
+impl TileData {
+    pub fn parse(rom: &mut RomReader) -> Result<TileData> {
+        let index = rom.index.graphics.ok_or("no graphics.bin in ROM")?;
+        let bytes = rom::read_by_index(&mut rom.archive, index)?;
+        let tile8_list = decode_graphics(bytes);
+        Ok(Self {
             tile8_list,
             map_tile16_list: map_tile16_list(),
             sprite_tile16_list: sprite_tile16_list(),
             enemy_tile16_list: enemy_tile16_list(),
             map_sprite_tile16_list: map_sprite_tile16_list(),
-        }
+        })
     }
 }
 
@@ -240,7 +245,7 @@ pub fn map_tile16_list() -> Vec<Tile16> {
     tile16_list
 }
 
-pub fn decode_graphics(bytes: Vec<u8>) -> Vec<Tile8Data> {
+fn decode_graphics(bytes: Vec<u8>) -> Vec<Tile8Data> {
     bytes
         .chunks(2)
         .collect::<Vec<_>>()

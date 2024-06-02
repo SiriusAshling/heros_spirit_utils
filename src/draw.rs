@@ -1,15 +1,14 @@
-use std::error::Error;
 use std::ops::{Deref, DerefMut};
 use std::path::Path;
 
 use image::{ImageBuffer, ImageFormat, Pixel, Rgba, RgbaImage};
 
 use crate::data::{BRIGHT_MAPS, MAP_PALETTES, TERRAIN_FLAGS};
-use crate::error::SimpleError;
 use crate::graphics::{Tile16, Tile8, Tile8Data, TileData};
 use crate::map::{self, Map};
 use crate::palette::{self, DEFAULT_PALETTE};
 use crate::sprite::{Collectible, Door, Enemy, Sprite, Things};
+use crate::Result;
 
 const TILE8_ROW_LENGTH: u32 = 16;
 
@@ -83,7 +82,7 @@ fn draw_tile16<P, Container>(
     }
 }
 
-pub fn draw_tile8s(path: impl AsRef<Path>, tile8_list: &[Tile8Data]) -> Result<(), Box<dyn Error>> {
+pub fn draw_tile8s(path: impl AsRef<Path>, tile8_list: &[Tile8Data]) -> Result<()> {
     let len = tile8_list.len() as u32;
     let width = TILE8_ROW_LENGTH * 8;
     let height = (len + 9) / TILE8_ROW_LENGTH * 8;
@@ -114,7 +113,7 @@ pub fn draw_tile8s(path: impl AsRef<Path>, tile8_list: &[Tile8Data]) -> Result<(
     Ok(())
 }
 
-pub fn undraw_tile8s(path: impl AsRef<Path>) -> Result<Vec<Tile8Data>, Box<dyn Error>> {
+pub fn undraw_tile8s(path: impl AsRef<Path>) -> Result<Vec<Tile8Data>> {
     let image = image::open(path)?;
     let tile8_list = image
         .into_rgba8()
@@ -131,7 +130,7 @@ pub fn undraw_tile8s(path: impl AsRef<Path>) -> Result<Vec<Tile8Data>, Box<dyn E
                         pixel_row[index * 8..(index + 1) * 8]
                             .iter()
                             .map(|pixel| {
-                                DEFAULT_PALETTE
+                                let pixel = DEFAULT_PALETTE
                                     .iter()
                                     .enumerate()
                                     .find_map(|(index, default_pixel)| {
@@ -141,21 +140,20 @@ pub fn undraw_tile8s(path: impl AsRef<Path>) -> Result<Vec<Tile8Data>, Box<dyn E
                                             None
                                         }
                                     })
-                                    .ok_or(SimpleError("Invalid pixel color in tile8s"))
+                                    .ok_or("Invalid pixel color in tile8s")?;
+                                Ok(pixel)
                             })
                             .collect()
                     })
                     .collect()
             })
         })
-        .collect::<Result<_, _>>()?;
+        .collect::<Result<_>>()?;
 
     Ok(tile8_list)
 }
 
-pub fn draw_tile16s(path: impl AsRef<Path>, tile_data: &TileData) -> Result<(), Box<dyn Error>> {
-    let path = path.as_ref().to_owned();
-
+pub fn draw_tile16s(tile_data: &TileData) -> Result<()> {
     for (index, tile16) in tile_data.map_tile16_list.iter().enumerate() {
         let mut image: RgbaImage = ImageBuffer::new(16, 16);
 
@@ -169,14 +167,13 @@ pub fn draw_tile16s(path: impl AsRef<Path>, tile_data: &TileData) -> Result<(), 
             false,
         );
 
-        let mut tile16_path = path.clone();
-        tile16_path.push(format!("map_{}.png", index + 1));
-        image.save_with_format(&tile16_path, ImageFormat::Png)?;
+        let path = format!("rom_files/Graphics/tile16/map_{}.png", index + 1);
+        image.save_with_format(&path, ImageFormat::Png)?;
     }
     for (index, tile16) in tile_data.sprite_tile16_list.iter().enumerate() {
         let mut image: RgbaImage = ImageBuffer::new(16, 16);
 
-        let palette = palette::get_sprite_palette(index);
+        let palette = palette::get_sprite_palette(index, 0);
         draw_tile16(
             &tile_data.tile8_list,
             tile16,
@@ -187,9 +184,8 @@ pub fn draw_tile16s(path: impl AsRef<Path>, tile_data: &TileData) -> Result<(), 
             false,
         );
 
-        let mut tile16_path = path.clone();
-        tile16_path.push(format!("sprite_{}.png", index));
-        image.save_with_format(&tile16_path, ImageFormat::Png)?;
+        let path = format!("rom_files/Graphics/tile16/sprite_{}.png", index);
+        image.save_with_format(&path, ImageFormat::Png)?;
     }
     for (index, tile16) in tile_data.enemy_tile16_list.iter().enumerate() {
         let mut image: RgbaImage = ImageBuffer::new(16, 16);
@@ -205,9 +201,8 @@ pub fn draw_tile16s(path: impl AsRef<Path>, tile_data: &TileData) -> Result<(), 
             false,
         );
 
-        let mut tile16_path = path.clone();
-        tile16_path.push(format!("enemy_{}.png", index));
-        image.save_with_format(&tile16_path, ImageFormat::Png)?;
+        let path = format!("rom_files/Graphics/tile16/enemy_{}.png", index);
+        image.save_with_format(&path, ImageFormat::Png)?;
     }
 
     Ok(())
@@ -445,10 +440,10 @@ fn draw_sprite_onto(
         &tile_data.sprite_tile16_list
     }[sprite_index];
     let palette = if is_enemy {
-        palette::get_enemy_palette
+        palette::get_enemy_palette(sprite_index)
     } else {
-        palette::get_sprite_palette
-    }(sprite_index);
+        palette::get_sprite_palette(sprite_index, map_id)
+    };
     draw_tile16(
         &tile_data.tile8_list,
         tile16,
@@ -484,7 +479,7 @@ fn draw_sprite_frame(image: &mut RgbaImage) {
     }
 }
 
-pub fn merge_maps(maps: Vec<(u8, RgbaImage)>) -> Result<RgbaImage, Box<dyn Error>> {
+pub fn merge_maps(maps: Vec<(u8, RgbaImage)>) -> Result<RgbaImage> {
     let mut image = RgbaImage::new(7808, 9008);
 
     for (identifier, map) in maps {

@@ -1,65 +1,72 @@
-use std::error::Error;
 use std::ffi::OsStr;
-use std::fs;
-use std::path::{Path, PathBuf};
-use std::str::FromStr;
+use std::path::PathBuf;
 
 use crate::map::{self, Map};
-use crate::zip::NamedFile;
-use crate::{draw, graphics};
+use crate::rom::RomWriter;
+use crate::{draw, graphics, savedata, util, Result};
 
-pub fn import_files(
-    path: impl AsRef<Path>,
-    files: &mut Vec<NamedFile>,
-    extension: impl AsRef<OsStr>,
-) -> Result<(), Box<dyn Error>> {
-    files.extend(fs::read_dir(path)?.filter_map(|file| {
-        let file = file.ok()?;
-        if PathBuf::from(file.file_name())
-            .extension()
-            .map_or_else(|| extension.as_ref() == "", |ext| ext == extension.as_ref())
-        {
-            let mut filename = PathBuf::from(file.file_name());
-            filename.set_extension("");
-            let bytes = fs::read(file.path()).ok()?;
-            Some((filename.to_string_lossy().to_string(), bytes))
-        } else {
-            None
+pub fn import(rom: Option<PathBuf>) {
+    util::feedback("Import savedata", savedata::encode("savedata"));
+    util::feedback("Import savedatb", savedata::encode("savedatb"));
+    util::feedback("Import savedatc", savedata::encode("savedatc"));
+    util::feedback("Import bunny", savedata::encode("bunny"));
+
+    let Some(rom) = rom else { return };
+    util::feedback("Import rom", import_rom(rom));
+}
+
+fn import_rom(rom: PathBuf) -> Result<()> {
+    let mut rom = RomWriter::create(rom)?;
+
+    import_tilesets(&mut rom)?;
+    import_maps(&mut rom)?;
+    import_files("Textures", &mut rom)?;
+    import_files("SFX", &mut rom)?;
+    import_files("Music", &mut rom)?;
+    import_files("Shaders", &mut rom)?;
+    import_files("Other", &mut rom)?;
+
+    Ok(())
+}
+
+fn import_tilesets(rom: &mut RomWriter) -> Result<()> {
+    let tile8_list = draw::undraw_tile8s("rom_files/Graphics/tile8.bmp")?;
+    rom.write("graphics.bin", &graphics::encode_graphics(tile8_list))?;
+
+    Ok(())
+}
+
+fn import_maps(rom: &mut RomWriter) -> Result<()> {
+    for file in util::read_dir("rom_files/Maps")? {
+        let file = file?;
+        let path = file.path();
+        if path.extension() != Some(OsStr::new("tmx")) {
+            continue;
         }
-    }));
+        let name = path.file_stem().unwrap();
+        let name = name
+            .to_str()
+            .ok_or_else(|| format!("invalid filename \"{}\"", path.display()))?;
 
-    Ok(())
-}
-
-pub fn import_tilesets(
-    path: impl AsRef<Path>,
-    files: &mut Vec<NamedFile>,
-) -> Result<(), Box<dyn Error>> {
-    let mut path = path.as_ref().to_owned();
-    path.push("tile8/all.bmp");
-    let tile8_list = draw::undraw_tile8s(path)?;
-    files.push((
-        "graphics".to_string(),
-        graphics::encode_graphics(tile8_list),
-    ));
-
-    Ok(())
-}
-
-pub fn import_maps(
-    path: impl AsRef<Path>,
-    files: &mut Vec<NamedFile>,
-) -> Result<(), Box<dyn Error>> {
-    let mut maps = Vec::new();
-    import_files(path, &mut maps, "tmx")?;
-    for (file_name, bytes) in maps {
-        let identifier = file_name
+        let identifier = name
             .strip_prefix("map")
-            .map(u8::from_str)
-            .and_then(Result::ok)
-            .unwrap_or_default();
-        let map = Map::from_tmx(identifier, &String::from_utf8(bytes)?)?;
-        files.push((file_name, map::encode_map(map)));
+            .and_then(|id| id.parse().ok())
+            .ok_or_else(|| format!("invalid map identifier \"{name}\""))?;
+        let map = Map::from_tmx(identifier, &util::read_to_string(&path)?)?;
+        rom.write(&format!("Maps/{name}"), &map::encode_map(map))?;
+    }
+
+    Ok(())
+}
+
+fn import_files(folder: &str, rom: &mut RomWriter) -> Result<()> {
+    for file in util::read_dir(&format!("rom_files/{folder}"))? {
+        let file = file?;
+        let file_name = file.file_name();
+        let file_name = file_name
+            .to_str()
+            .ok_or_else(|| format!("invalid filename \"{}\"", file_name.to_string_lossy()))?;
+        rom.write(file_name, &util::read(file.path())?)?;
     }
 
     Ok(())

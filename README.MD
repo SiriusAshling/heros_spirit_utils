@@ -8,18 +8,20 @@ Pass "export" to export the rom. Files will be written into a folder "rom_files"
 Pass "import" to import the rom. Your rom will be overwritten (best make a backup of the vanilla rom).
 
 ## Files you can edit
-- rom_files/graphics/tile8/all.bmp: Only use the four pixel colors already in the image, the game will color the tiles based on palette
-- rom_files/graphics/meow.bmp
-- rom_files/graphics/rawr.bmp
-- rom_files/graphics/winter.bmp: Used for subareas in the Underworld
-- rom_files/maps/map\*\*.tmx: Use the Tiled editor to edit. More below
-- rom_files/music/track\*\*.ogg
-- rom_files/sounds/sfx\*\*.ogg
-- rom_files/sounds/shaders/retrofx: OpenGL shader
+
+- rom_files/Graphics/tile8.bmp: Only use the four pixel colors already in the image, the game will color the tiles based on palette
+- rom_files/Maps/map\*\*.tmx: Use the Tiled editor to edit. More below
+- rom_files/Music/\*
+- rom_files/SFX/\*
+- rom_files/Textures/\*
+- rom_files/World/\*
 
 ## Files you can't edit
-- rom_files/tile16: These are just pieced together from the tile8 data for convenient viewing of what the tiles might look like in reality.
-- rom_files/maps/images: Just for viewing
+
+- rom_files/Graphics/tile16: These are just pieced together from the tile8 data for convenient viewing of what the tiles might look like in reality.
+- rom_files/Maps/images: Rendered versions of the maps for convenience
+- rom_files/Maps/stats: Collectible and Enemy statistics about the maps
+- completion/\*: Information about missing items from savefiles
 
 ## Editing maps
 
@@ -34,6 +36,7 @@ Only use the Tiles tileset to draw on the Tiles layer. It includes everything th
 Only use the Sprites tileset to place on the Sprites layer. It includes everything that can be on the Sprites layer.
 
 Some useful shortcuts in Tiled:
+
 - T to place Sprites
 - S to select and edit Sprites
 - Ctrl to snap Sprites to the grid when placing them, otherwise they will be snapped to the grid on import.
@@ -45,6 +48,7 @@ For simple sprites like Swords or Wind Routes you can just place them. More comp
 #### **Map Transfers**
 
 The first item in the Sprites tileset, name "Other(0)". Add 4 custom properties:
+
 - "byte_1": target map
 - "byte_2": target x
 - "byte_3": target y
@@ -53,6 +57,7 @@ The first item in the Sprites tileset, name "Other(0)". Add 4 custom properties:
 #### **Silent in-map Warps**
 
 The 16th item in the Sprites tileset, name "Other(15)". Add 2 custom properties:
+
 - "byte_1": target x
 - "byte_2": target y
 

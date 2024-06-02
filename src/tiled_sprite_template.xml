@@ -4,4 +4,7 @@
                     {}
                 </data>
             </image>
+            <properties>
+                <property name="name" type="string" value="{}"/>
+            </properties>
         </tile>

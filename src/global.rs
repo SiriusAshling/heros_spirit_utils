@@ -1,10 +1,10 @@
 use std::collections::HashMap;
-use std::error::Error;
-use std::fs;
 
-use enum_utils::IterVariants;
-use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
+use strum::{FromRepr, VariantArray};
+
+use crate::util;
+use crate::Result;
 
 #[derive(Serialize, Deserialize)]
 pub struct GlobalSave {
@@ -12,9 +12,7 @@ pub struct GlobalSave {
     pub flags: HashMap<GlobalFlag, bool>,
 }
 
-#[derive(
-    Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash, TryFromPrimitive, IterVariants,
-)]
+#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash, FromRepr, VariantArray)]
 #[repr(u8)]
 pub enum GlobalFlag {
     DefeatedConvergence,
@@ -33,12 +31,22 @@ pub enum GlobalFlag {
     StartedNewGamePlusPlusPlus,
     UnlockedGreenEquipment,
     TheEye,
-    DragonEgg,
+    DeprecatedEgg,
     TamedRabbit,
     EvilBunny,
     Cat1,
     Cat2,
     Cat3,
+    HerosSprint,
+    NewGameMinus,
+    Eclipsed,
+    HaphyStarted,
+    HaphyEnded,
+    Horsie,
+    Unicorn,
+    Dicorn,
+    Heartless,
+    Royal,
 }
 impl GlobalFlag {
     fn has(&self, byte: u8) -> bool {
@@ -59,29 +67,41 @@ impl GlobalFlag {
             Self::StartedNewGamePlusPlusPlus => byte == 254,
             Self::UnlockedGreenEquipment => byte == 96,
             Self::TheEye => byte == 150,
-            Self::DragonEgg => byte == 81,
+            Self::DeprecatedEgg => byte == 81,
             Self::TamedRabbit => byte == 35,
             Self::EvilBunny => byte == 65,
             Self::Cat1 => byte == 3,
             Self::Cat2 => byte == 119,
             Self::Cat3 => byte == 83,
+            Self::HerosSprint => byte == 0,
+            Self::NewGameMinus => byte == 34,
+            Self::Eclipsed => byte == 254,
+            Self::HaphyStarted => byte == 170,
+            Self::HaphyEnded => byte == 0,
+            Self::Horsie => byte == 255,
+            Self::Unicorn => byte == 255,
+            Self::Dicorn => byte == 255,
+            Self::Heartless => byte == 255,
+            Self::Royal => byte == 1,
         }
     }
 }
 
-pub fn decode() -> Result<(), Box<dyn Error>> {
-    let data = fs::read("global")?;
+pub fn decode() -> Result<()> {
+    let data = util::read("global")?;
 
     let sequence = data[..10].iter().map(|number| number.to_string()).collect();
 
-    let flags = GlobalFlag::iter()
+    let flags = GlobalFlag::VARIANTS
+        .iter()
+        .copied()
         .map(|flag| (flag, flag.has(data[flag as usize + 10])))
         .collect();
 
     let global_save = GlobalSave { sequence, flags };
     let out = serde_json::to_string_pretty(&global_save)?;
 
-    fs::write("global.json", out)?;
+    util::write("global.json", out)?;
 
     Ok(())
 }

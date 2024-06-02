@@ -1,15 +1,8 @@
-use std::{
-    collections::{HashMap, HashSet},
-    error::Error,
-    fs,
-    path::Path,
-};
+use std::collections::{HashMap, HashSet};
 
-use crate::{
-    map::{self, Map},
-    sprite::{Collectible, Enemy, Sprite},
-    util,
-};
+use crate::map::{self, Map};
+use crate::sprite::{Collectible, Enemy, Sprite};
+use crate::{util, Result};
 
 #[derive(Default)]
 struct SpriteStats {
@@ -17,7 +10,7 @@ struct SpriteStats {
     enemies: HashMap<Enemy, u8>,
 }
 
-pub fn map_stats(path: impl AsRef<Path>, maps: &[Map]) -> Result<(), Box<dyn Error>> {
+pub fn map_stats(maps: &[Map]) -> Result<()> {
     let mut sprite_stats = HashMap::new();
 
     for map in maps {
@@ -52,11 +45,13 @@ pub fn map_stats(path: impl AsRef<Path>, maps: &[Map]) -> Result<(), Box<dyn Err
         all_collectibles.extend(stats.collectibles.keys());
         all_enemies.extend(stats.enemies.keys());
     }
+    let mut all_collectibles = Vec::from_iter(all_collectibles);
+    all_collectibles.sort_unstable();
     let mut all_enemies = Vec::from_iter(all_enemies);
     all_enemies.sort_unstable();
 
     let mut sprite_stats = Vec::from_iter(sprite_stats);
-    sprite_stats.sort_unstable_by_key(|(map, _)| map::map_order_index(*map));
+    sprite_stats.sort_unstable_by_key(|(map, _)| *map);
 
     let collectibles_header = format!(
         ", {}",
@@ -113,16 +108,8 @@ pub fn map_stats(path: impl AsRef<Path>, maps: &[Map]) -> Result<(), Box<dyn Err
     let collectibles_stats = format!("{}\n{}", collectibles_header, collectibles_stats);
     let enemies_stats = format!("{}\n{}", enemies_header, enemies_stats);
 
-    let path = path.as_ref();
-    util::ensure_dir(&path)?;
-
-    let mut collectibles_path = path.to_owned();
-    collectibles_path.push("collectibles.csv");
-    fs::write(collectibles_path, collectibles_stats)?;
-
-    let mut enemies_path = path.to_owned();
-    enemies_path.push("enemies.csv");
-    fs::write(enemies_path, enemies_stats)?;
+    util::write("rom_files/Maps/stats/collectibles.csv", collectibles_stats)?;
+    util::write("rom_files/Maps/stats/enemies.csv", enemies_stats)?;
 
     Ok(())
 }

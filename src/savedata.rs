@@ -1,35 +1,38 @@
-use std::error::Error;
-use std::iter;
-use std::path::Path;
-use std::{cmp::min, fs};
+use std::collections::HashMap;
 
-use num_enum::FromPrimitive;
+use std::cmp::min;
+use std::path::Path;
+
+use base64::prelude::BASE64_STANDARD;
+use base64::Engine;
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
+use strum::FromRepr;
 
 use crate::data::{DEOBF, OBF};
 use crate::inventory::Inventory;
+use crate::util;
+use crate::Result;
 
 #[derive(Serialize, Deserialize)]
 pub struct SaveDat {
     pub position: String,
     pub values: String,
     pub hearts: Vec<String>,
-    pub flags: serde_json::Value,
+    pub flags: HashMap<String, bool>,
     pub playtime: usize,
     pub deaths: usize,
     pub kills: usize,
     pub label: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, FromPrimitive)]
+#[derive(Serialize, Deserialize, Clone, Copy, FromRepr)]
 #[repr(u8)]
 pub enum Direction {
     Down = 2,
     Left = 4,
     Right = 6,
     Up = 8,
-    #[num_enum(default)]
-    Unknown,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -54,7 +57,7 @@ pub struct SavePretty {
     pub position: Position,
     pub inventory: Inventory,
     pub hearts: Vec<String>,
-    pub flags: serde_json::Value,
+    pub flags: HashMap<String, bool>,
     pub playtime: usize,
     pub deaths: usize,
     pub kills: usize,
@@ -137,7 +140,7 @@ fn scramble_piece(s: &mut String, seed: usize) {
     }
 }
 
-fn unscramble(mut data: String) -> Result<(usize, SaveDat), Box<dyn Error>> {
+fn unscramble(mut data: String) -> Result<(usize, SaveDat)> {
     let rest = data.split_off(10);
 
     let steps = data.parse()?;
@@ -174,18 +177,10 @@ fn unscramble(mut data: String) -> Result<(usize, SaveDat), Box<dyn Error>> {
             break;
         }
     }
-
-    fs::write(
-        "temp.json",
-        serde_json::from_str::<'_, serde_json::value::Value>(&second_iteration[..end])
-            .unwrap()
-            .to_string(),
-    )
-    .unwrap();
     Ok((steps, serde_json::from_str(&second_iteration[..end])?))
 }
 
-fn scramble(steps: usize, data: SaveDat) -> Result<String, Box<dyn Error>> {
+fn scramble(steps: usize, data: SaveDat) -> Result<String> {
     let mut first_iteration = String::new();
     let data = serde_json::to_string(&data)?;
     let mut len = data.len();
@@ -207,11 +202,16 @@ fn scramble(steps: usize, data: SaveDat) -> Result<String, Box<dyn Error>> {
         second_iteration += &piece;
     }
 
+    // I wish I knew why the output is broken sometimes...
+    if let Some((index, _)) = second_iteration.match_indices('}').skip(2).next() {
+        second_iteration.remove(index);
+    }
+
     Ok(second_iteration)
 }
 
-pub fn decode(path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
-    let data = fs::read_to_string(&path)?;
+pub fn decode(path: &str, write_completion: bool) -> Result<SavePretty> {
+    let data = util::read_to_string(&path)?;
     let (steps, savedat) = unscramble(data)?;
     let SaveDat {
         position,
@@ -232,12 +232,13 @@ pub fn decode(path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
         .parse::<u8>()?;
     let x = position_parts.next().ok_or("malformed data")?.parse()?;
     let y = position_parts.next().ok_or("malformed data")?.parse()?;
-    let direction = Direction::from(
+    let direction = Direction::from_repr(
         position_parts
             .next()
             .ok_or("malformed data")?
             .parse::<u8>()?,
-    );
+    )
+    .ok_or("unknown direction")?;
     let position = Position {
         map,
         x,
@@ -246,7 +247,7 @@ pub fn decode(path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
     };
 
     // values
-    let mut values = base64::decode(values)?;
+    let mut values = BASE64_STANDARD.decode(values)?;
     values = values
         .into_iter()
         .map(|value| DEOBF[value as usize])
@@ -266,29 +267,27 @@ pub fn decode(path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
     };
 
     let out = serde_json::to_string_pretty(&pretty)?;
+    util::write(format!("{path}.json"), out)?;
 
-    let mut path = path.as_ref().with_extension("json");
-    fs::write(&path, out)?;
+    if write_completion {
+        let completion_column = pretty
+            .inventory
+            .completion_column()
+            .into_iter()
+            .map(|value| value.to_string())
+            .join("\n");
+        util::write(
+            format!("completion/{path}_completion.txt"),
+            completion_column,
+        )?;
+    }
 
-    let mut completion_column = pretty
-        .inventory
-        .into_completion_column()
-        .into_iter()
-        .map(|value| value.to_string())
-        .collect::<Vec<_>>();
-    path.set_extension("completion");
-    fs::write(&path, completion_column.join("\n"))?;
-
-    completion_column.splice(61..73, iter::empty());
-    path.set_extension("convergence");
-    fs::write(&path, completion_column.join("\n"))?;
-
-    Ok(())
+    Ok(pretty)
 }
 
-pub fn encode(path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
+pub fn encode(path: impl AsRef<Path>) -> Result<()> {
     let read_path = path.as_ref().with_extension("json");
-    let data = fs::read_to_string(&read_path)?;
+    let data = util::read_to_string(&read_path)?;
 
     let SavePretty {
         steps,
@@ -306,7 +305,7 @@ pub fn encode(path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
         .into_iter()
         .map(|value| OBF[value as usize])
         .collect::<Vec<_>>();
-    let values = base64::encode(values);
+    let values = BASE64_STANDARD.encode(values);
     let position = position.encode();
 
     let savedat = SaveDat {
@@ -321,7 +320,7 @@ pub fn encode(path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
     };
 
     let out = scramble(steps, savedat)?;
-    fs::write(path, out)?;
+    util::write(path, out)?;
 
     Ok(())
 }

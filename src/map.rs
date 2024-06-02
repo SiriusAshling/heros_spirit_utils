@@ -1,6 +1,18 @@
-use std::error::Error;
-
+use crate::Result;
+use crate::rom::{self, RomReader};
 use crate::sprite::SpriteData;
+
+pub fn parse_maps(rom: &mut RomReader) -> Result<Vec<Map>> {
+    rom.index
+        .maps
+        .iter()
+        .map(|index| {
+            let bytes = rom::read_by_index(&mut rom.archive, *index)?;
+            let map = decode_map(bytes)?;
+            Ok(map)
+        })
+        .collect()
+}
 
 pub struct Map {
     pub identifier: u8,
@@ -36,9 +48,20 @@ pub const THE_DUNGEONS: u8 = 27;
 pub const ITEM_SHOP: u8 = 28;
 pub const CONVERGENCE: u8 = 29;
 pub const TRIAL_OF_REALITY: u8 = 30;
+pub const FALLEN_WORLD: u8 = 33;
+pub const ROAD_TO_HELL: u8 = 34;
 pub const HAUNTED_MANSE: u8 = 35;
+pub const MOONWELL: u8 = 36;
+pub const BETWEEN_WORLDS: u8 = 37;
+pub const HEROS_SPRINT: u8 = 38;
+pub const MUNDEMAN: u8 = 39;
 pub const SMUGGLERS_ROAD: u8 = 40;
 pub const SMUGGLERS_RUIN: u8 = 41;
+pub const HHM_CASTLE_GROUNDS: u8 = 42;
+pub const HHM_CASTLE_MONILLUD: u8 = 43;
+pub const HHM_STRANGE_AREA: u8 = 44;
+pub const HHM_THE_UNDERWORLD: u8 = 45;
+pub const HHM_THRONE_ROOM: u8 = 46;
 
 pub fn map_name(map: u8) -> &'static str {
     match map {
@@ -70,56 +93,25 @@ pub fn map_name(map: u8) -> &'static str {
         ITEM_SHOP => "ItemShop",
         CONVERGENCE => "Convergence",
         TRIAL_OF_REALITY => "TrialOfReality",
+        FALLEN_WORLD => "FallenWorld",
+        ROAD_TO_HELL => "RoadToHell",
         HAUNTED_MANSE => "HauntedManse",
+        MOONWELL => "Moonwell",
+        BETWEEN_WORLDS => "BetweenWorlds",
+        HEROS_SPRINT => "HerosSprint",
+        MUNDEMAN => "Mundeman",
         SMUGGLERS_ROAD => "SmugglersRoad",
         SMUGGLERS_RUIN => "SmugglersRuin",
+        HHM_CASTLE_GROUNDS => "HaphyCastleGrounds",
+        HHM_CASTLE_MONILLUD => "HaphyCastleMonillud",
+        HHM_STRANGE_AREA => "HaphyStrangeArea",
+        HHM_THE_UNDERWORLD => "HaphyTheUnderworld",
+        HHM_THRONE_ROOM => "HaphyThroneRoom",
         _ => "Unknown",
     }
 }
 
-const MAP_ORDER: [u8; 31] = [
-    CASTLE_GROUNDS,
-    SOUTH_MUNDEMAN,
-    THE_TUNNELS,
-    SOUTHERN_SWAMP,
-    DUST_SHELF,
-    THE_TUNDRA,
-    HALLOW_GROUND,
-    HAUNTED_MANSE,
-    NORTH_MUNDEMAN,
-    MOLTEN_CAVERN,
-    FROZEN_SHORE,
-    VERDANT_COAST,
-    LUDDERSHORE,
-    CASTLE_MONILLUD,
-    THE_DUNGEONS,
-    ITEM_SHOP,
-    SANCTUARY,
-    DRAGONS_LAIR,
-    SMUGGLERS_ROAD,
-    SMUGGLERS_RUIN,
-    OTHERWORLD,
-    OTHERWORLD_ARENA,
-    THE_UNDERWORLD,
-    GLITCH,
-    CORRUPTED_CASTLE,
-    THRONE_ROOM,
-    THRONE_ROOM_CONFRONTATION,
-    EXPLODING_THRONE_ROOM,
-    CASTLE_RUINS,
-    CONVERGENCE,
-    TRIAL_OF_REALITY,
-];
-
-pub fn map_order_index(map: u8) -> usize {
-    MAP_ORDER
-        .iter()
-        .enumerate()
-        .find(|(_, identifier)| map == **identifier)
-        .map_or(usize::MAX, |(index, _)| index)
-}
-
-pub fn decode_map(bytes: Vec<u8>) -> Result<Map, Box<dyn Error>> {
+fn decode_map(bytes: Vec<u8>) -> Result<Map> {
     let identifier = bytes[0];
     let width = bytes[1];
     let width_usize = width as usize;

@@ -1,12 +1,10 @@
 use std::cmp::Ordering;
-use std::error::Error;
+
 use std::ops::RangeInclusive;
 
-use enum_utils::FromStr;
+use crate::Result;
 
-use crate::error::SimpleError;
-
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, FromStr)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
 pub enum Collectible {
     GoldKey,
     SilverKey,
@@ -29,7 +27,7 @@ pub enum Collectible {
     PossumCoin = 34,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum Gear {
     Hammer = 11,
     Boots = 12,
@@ -44,7 +42,7 @@ pub enum Gear {
     RedShield = 32,
 }
 
-#[derive(Debug, Clone, Copy, FromStr)]
+#[derive(Debug, Clone, Copy)]
 pub enum Door {
     Gold,
     Silver,
@@ -57,7 +55,7 @@ pub enum Door {
     Underworld,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, FromStr)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Enemy {
     Guard = 0,
     BSlime = 1,
@@ -147,16 +145,22 @@ impl Enemy {
 
 impl PartialOrd for Enemy {
     fn partial_cmp(&self, other: &Enemy) -> Option<Ordering> {
-        self.strength().partial_cmp(&other.strength())
+        match self.strength().partial_cmp(&other.strength()) {
+            Some(Ordering::Equal) => (*self as u8).partial_cmp(&(*other as u8)),
+            cmp => cmp,
+        }
     }
 }
 impl Ord for Enemy {
     fn cmp(&self, other: &Enemy) -> Ordering {
-        self.strength().cmp(&other.strength())
+        match self.strength().cmp(&other.strength()) {
+            Ordering::Equal => (*self as u8).cmp(&(*other as u8)),
+            cmp => cmp,
+        }
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, FromStr)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Things {
     CompassWall,
     NGMountain,
@@ -197,13 +201,13 @@ impl SpriteData {
         read
     }
 
-    pub fn read(sprite_data: &[u8], index: &mut usize) -> Result<(u8, u8, Self), Box<dyn Error>> {
+    pub fn read(sprite_data: &[u8], index: &mut usize) -> Result<(u8, u8, Self)> {
         let kind = Self::read_step(sprite_data, index);
         let x = Self::read_step(sprite_data, index);
         let y = Self::read_step(sprite_data, index);
         let size = Self::size_of_kind(kind);
         if size == 0 {
-            Err(SimpleError("Unknown sprite"))?
+            Err("Unknown sprite")?
         }
         let extra_bytes = (1..size)
             .map(|_| Self::read_step(sprite_data, index))
@@ -230,7 +234,7 @@ impl SpriteData {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum Sprite {
     Collectible(Collectible),
     Gear(Gear),
@@ -239,7 +243,10 @@ pub enum Sprite {
     WindRoute,
     Save,
     Things(Things),
-    Other(u8),
+    Other(
+        // This is intentionally only used in the Debug implementation
+        #[allow(unused)] u8,
+    ),
 }
 
 impl Sprite {

@@ -4,15 +4,15 @@ description = "data conversion tools for files used by Hero's Spirit"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-clap = { version = "3.2", features = ["derive"] }
-zip = { version = "0.6", default_features = false, features = ["deflate", "aes-crypto"] }
+clap = { version = "4.5.4", features = ["derive"] }
+zip = { version = "2.1.0", default-features = false, features = ["deflate"] }
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-serde-xml-rs = "0.5"
-base64 = "0.13"
-image = "0.24"
-num_enum = "0.5"
-enum-utils = "0.1"
+serde_json = "1.0.117"
+serde-xml-rs = "0.6.0"
+base64 = "0.22.1"
+image = { version = "0.25.1", default-features = false, features = ["png", "bmp"] }
+inquire = { version = "0.7.5", default-features = false, features = ["crossterm"] }
+strum = { version = "0.26.2", features = ["derive"] }
+itertools = "0.13.0"
+color-hex = "0.2.0"
