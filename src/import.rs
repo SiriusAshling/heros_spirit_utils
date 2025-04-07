@@ -60,7 +60,7 @@ fn import_maps(rom: &mut RomWriter) -> Result<()> {
 }
 
 fn import_files(folder: &str, rom: &mut RomWriter) -> Result<()> {
-    for file in util::read_dir(&format!("rom_files/{folder}"))? {
+    for file in util::read_dir(format!("rom_files/{folder}"))? {
         let file = file?;
         let file_name = file.file_name();
         let file_name = file_name

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use strum::{FromRepr, VariantArray};
 
@@ -49,7 +50,7 @@ pub enum GlobalFlag {
     Royal,
 }
 impl GlobalFlag {
-    fn has(&self, byte: u8) -> bool {
+    fn has(self, byte: u8) -> bool {
         match self {
             Self::DefeatedConvergence => byte == 160,
             Self::DefeatedGlitch => byte == 255,
@@ -90,7 +91,7 @@ impl GlobalFlag {
 pub fn decode() -> Result<()> {
     let data = util::read("global")?;
 
-    let sequence = data[..10].iter().map(|number| number.to_string()).collect();
+    let sequence = data[..10].iter().join("");
 
     let flags = GlobalFlag::VARIANTS
         .iter()

@@ -145,10 +145,7 @@ impl Enemy {
 
 impl PartialOrd for Enemy {
     fn partial_cmp(&self, other: &Enemy) -> Option<Ordering> {
-        match self.strength().partial_cmp(&other.strength()) {
-            Some(Ordering::Equal) => (*self as u8).partial_cmp(&(*other as u8)),
-            cmp => cmp,
-        }
+        Some(self.cmp(other))
     }
 }
 impl Ord for Enemy {
@@ -207,7 +204,7 @@ impl SpriteData {
         let y = Self::read_step(sprite_data, index);
         let size = Self::size_of_kind(kind);
         if size == 0 {
-            Err("Unknown sprite")?
+            Err("Unknown sprite")?;
         }
         let extra_bytes = (1..size)
             .map(|_| Self::read_step(sprite_data, index))
@@ -250,7 +247,7 @@ pub enum Sprite {
 }
 
 impl Sprite {
-    pub fn tile_size(&self) -> (u8, u8) {
+    pub fn tile_size(self) -> (u8, u8) {
         match self {
             Self::Enemy(Enemy::GDragon) => (3, 2),
             Self::Enemy(Enemy::Basilisk) => (1, 2),

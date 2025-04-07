@@ -9,6 +9,7 @@ use crate::map::{self, Map};
 use crate::rom::{ArchiveReader, RomReader};
 use crate::{draw, global, missing, savedata, stats, util, Result};
 
+#[allow(clippy::similar_names)]
 pub fn export(rom: Option<PathBuf>) {
     let savedata = util::feedback("Export savedata", savedata::decode("savedata", true));
     let savedatb = util::feedback("Export savedatb", savedata::decode("savedatb", true));
@@ -31,16 +32,13 @@ pub fn export(rom: Option<PathBuf>) {
     if let Some(maps) = maps {
         util::feedback("Gather stats", stats::map_stats(&maps));
 
-        util::feedback(
-            "Check missing items from saves",
-            (|| {
-                let savedata = missing::check("savedata", savedata, &maps);
-                let savedatb = missing::check("savedatb", savedatb, &maps);
-                let savedatc = missing::check("savedatc", savedatc, &maps);
-                let bunny = missing::check("bunny", bunny, &maps);
-                savedata.and(savedatb).and(savedatc).and(bunny)
-            })(),
-        );
+        util::feedback("Check missing items from saves", {
+            let savedata = missing::check("savedata", savedata, &maps);
+            let savedatb = missing::check("savedatb", savedatb, &maps);
+            let savedatc = missing::check("savedatc", savedatc, &maps);
+            let bunny = missing::check("bunny", bunny, &maps);
+            savedata.and(savedatb).and(savedatc).and(bunny)
+        });
 
         if let Some(tile_data) = tile_data {
             util::feedback(
@@ -62,7 +60,7 @@ pub fn export(rom: Option<PathBuf>) {
                 .collect();
             util::feedback(
                 "Draw world map",
-                draw::merge_maps(maps).and_then(|map| export_full_map_image(&map)),
+                export_full_map_image(&draw::merge_maps(maps)),
             );
         }
     }
@@ -100,7 +98,7 @@ fn export_tilesets(tile_data: &TileData) -> Result<()> {
 }
 
 fn export_files(path: &str, archive: &mut ArchiveReader, indices: &[usize]) -> Result<()> {
-    for index in indices.into_iter().copied() {
+    for index in indices.iter().copied() {
         let mut reader = archive.by_index(index)?;
         let name = reader
             .enclosed_name()
@@ -128,13 +126,10 @@ fn export_maps(path: impl AsRef<Path>, maps: &[Map], tile_data: &TileData) -> Re
 fn export_map_image(path: impl AsRef<Path>, identifier: u8, map: &RgbaImage) -> Result<()> {
     let mut path = path.as_ref().to_owned();
     fs::create_dir_all(&path)?;
-    path.push(format!(
-        "{}_{}.png",
-        identifier as u8,
-        map::map_name(identifier)
-    ));
+    let map_name = map::map_name(identifier);
+    path.push(format!("{identifier}_{map_name}.png"));
 
-    map.save_with_format(&path, ImageFormat::Png)?;
+    map.save_with_format(path, ImageFormat::Png)?;
 
     Ok(())
 }
@@ -144,7 +139,7 @@ fn export_full_map_image(map: &RgbaImage) -> Result<()> {
     fs::create_dir_all(&path)?;
     path.push("FullMap.png");
 
-    map.save_with_format(&path, ImageFormat::Png)?;
+    map.save_with_format(path, ImageFormat::Png)?;
 
     Ok(())
 }

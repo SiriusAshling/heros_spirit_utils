@@ -32,6 +32,7 @@ pub const DEOBF: [u8; 256] = [
     220, 52, 245, 1, 121, 26, 114, 182, 56, 184, 20, 36, 45, 86, 145, 232, 141, 119, 203, 13, 222,
     95, 168, 51, 213, 252, 225,
 ];
+#[allow(clippy::unreadable_literal)]
 // HS.Maps.Map.TerrainTags
 // Terrain Flags are: unused, ?, Water Path / Death Tile, Hard Wall, Blocks Movement, Lava, Slow, Blocks Sight
 pub const TERRAIN_FLAGS: [u8; 67] = [

@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::io::Cursor;
 use std::str::FromStr;
 
@@ -53,7 +54,6 @@ impl Map {
             max -= 3;
         }
         let tiles_tmx = (1..max)
-            .into_iter()
             .map(|id| {
                 let image = draw::draw_tile(id, self.identifier, tile_data);
                 let mut bytes = Cursor::new(Vec::new());
@@ -72,7 +72,6 @@ impl Map {
 
     fn sprite_tileset(&self, tile_data: &TileData) -> Result<String> {
         let tiles_tmx = (u8::MIN..u8::MAX)
-            .into_iter()
             .map(|id| {
                 let image = draw::draw_sprite(id, self.identifier, tile_data);
                 let mut bytes = Cursor::new(Vec::new());
@@ -97,7 +96,11 @@ impl Map {
         let mut csv = self
             .tiles
             .iter()
-            .map(|col| col.iter().map(|tile| *tile as u16 + TILE_OFFSET).join(", "))
+            .map(|col| {
+                col.iter()
+                    .map(|tile| u16::from(*tile) + TILE_OFFSET)
+                    .format(", ")
+            })
             .join(",\n");
 
         let map_is_missing_last_tile =
@@ -109,7 +112,7 @@ impl Map {
         csv
     }
 
-    fn sprites_tiledata(&self) -> String {
+    fn sprites_tiledata(&self) -> impl Display + use<'_> {
         self.sprites
             .iter()
             .enumerate()
@@ -118,25 +121,28 @@ impl Map {
                     .enumerate()
                     .filter_map(move |(x, sprite)| sprite.as_ref().map(|s| (x, y, s)))
             })
-            .map(|(x, y, sprite)| {
-                let byte_properties = sprite
-                    .extra_bytes
-                    .iter()
-                    .enumerate()
-                    .map(|(index, byte)| {
-                        format!(include_str!("tiled_property_template.xml"), index + 1, byte)
-                    })
-                    .collect::<String>();
+            .format_with("", |(x, y, sprite), f| {
+                let byte_properties =
+                    sprite
+                        .extra_bytes
+                        .iter()
+                        .enumerate()
+                        .format_with("", |(index, byte), f| {
+                            f(&format_args!(
+                                include_str!("tiled_property_template.xml"),
+                                index + 1,
+                                byte
+                            ))
+                        });
                 let (_, height) = Sprite::from(sprite.kind).tile_size();
-                format!(
+                f(&format_args!(
                     include_str!("tiled_object_template.xml"),
                     x * 16,
                     (y + height as usize) * 16,
-                    sprite.kind as u16 + SPRITE_OFFSET,
+                    u16::from(sprite.kind) + SPRITE_OFFSET,
                     byte_properties
-                )
+                ))
             })
-            .collect()
     }
 
     fn size_from_tmx(tmx: &str) -> Result<(usize, usize)> {
@@ -280,7 +286,7 @@ impl Map {
         }).ok_or("Failed to read Sprites layer")?;
 
         for (x, y, kind, extra_bytes) in sprite_data {
-            sprites[y][x] = Some(SpriteData { kind, extra_bytes })
+            sprites[y][x] = Some(SpriteData { kind, extra_bytes });
         }
 
         Ok(sprites)

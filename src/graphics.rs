@@ -2,8 +2,8 @@ use crate::data::{
     ENEMY_TILE_BITS, ENEMY_TILE_BIT_TABLE, ENEMY_TILE_FLIPS, MAP_TILE_BITS, SPRITE_TILE_BITS,
     SPRITE_TILE_BIT_TABLE, SPRITE_TILE_FLIPS, SPRITE_TILE_FLIP_TABLE, TILE_16S,
 };
-use crate::Result;
 use crate::rom::{self, RomReader};
+use crate::Result;
 
 pub struct TileData {
     pub tile8_list: Vec<Tile8Data>,
@@ -19,7 +19,7 @@ impl TileData {
     pub fn parse(rom: &mut RomReader) -> Result<TileData> {
         let index = rom.index.graphics.ok_or("no graphics.bin in ROM")?;
         let bytes = rom::read_by_index(&mut rom.archive, index)?;
-        let tile8_list = decode_graphics(bytes);
+        let tile8_list = decode_graphics(&bytes);
         Ok(Self {
             tile8_list,
             map_tile16_list: map_tile16_list(),
@@ -33,8 +33,8 @@ impl TileData {
 #[derive(Default)]
 pub struct Tile8 {
     pub index: u16,
-    pub flipx: bool,
-    pub flipy: bool,
+    pub flip_x: bool,
+    pub flip_y: bool,
     pub rotate: bool,
 }
 
@@ -57,13 +57,13 @@ fn build_enemy_tile(id: usize) -> Tile16 {
         let by_three = tile_index * 3;
 
         let index = ENEMY_TILE_BITS[bit_index + tile_index];
-        let flipx = ENEMY_TILE_FLIPS[flip_index + by_three];
-        let flipy = ENEMY_TILE_FLIPS[flip_index + by_three + 1];
+        let flip_x = ENEMY_TILE_FLIPS[flip_index + by_three];
+        let flip_y = ENEMY_TILE_FLIPS[flip_index + by_three + 1];
         let rotate = ENEMY_TILE_FLIPS[flip_index + by_three + 2];
         Tile8 {
             index,
-            flipx,
-            flipy,
+            flip_x,
+            flip_y,
             rotate,
         }
     };
@@ -84,13 +84,13 @@ fn build_sprite_tile(id: usize) -> Tile16 {
         let by_three = tile_index * 3;
 
         let index = SPRITE_TILE_BITS[bit_index + tile_index];
-        let flipx = SPRITE_TILE_FLIPS[flip_index + by_three];
-        let flipy = SPRITE_TILE_FLIPS[flip_index + by_three + 1];
+        let flip_x = SPRITE_TILE_FLIPS[flip_index + by_three];
+        let flip_y = SPRITE_TILE_FLIPS[flip_index + by_three + 1];
         let rotate = SPRITE_TILE_FLIPS[flip_index + by_three + 2];
         Tile8 {
             index,
-            flipx,
-            flipy,
+            flip_x,
+            flip_y,
             rotate,
         }
     };
@@ -112,13 +112,13 @@ fn build_map_sprite_tile(index: usize) -> Tile16 {
         let by_three = tile_index * 3;
 
         let index = MAP_TILE_BITS[bit_index + tile_index];
-        let flipx = SPRITE_TILE_FLIPS[flip_index + by_three];
-        let flipy = SPRITE_TILE_FLIPS[flip_index + by_three + 1];
+        let flip_x = SPRITE_TILE_FLIPS[flip_index + by_three];
+        let flip_y = SPRITE_TILE_FLIPS[flip_index + by_three + 1];
         let rotate = SPRITE_TILE_FLIPS[flip_index + by_three + 2];
         Tile8 {
             index,
-            flipx,
-            flipy,
+            flip_x,
+            flip_y,
             rotate,
         }
     };
@@ -163,18 +163,18 @@ pub fn map_tile16_list() -> Vec<Tile16> {
         Tile8::from(239),
         Tile8 {
             index: 239,
-            flipx: true,
+            flip_x: true,
             ..Tile8::default()
         },
         Tile8 {
             index: 239,
-            flipy: true,
+            flip_y: true,
             ..Tile8::default()
         },
         Tile8 {
             index: 239,
-            flipx: true,
-            flipy: true,
+            flip_x: true,
+            flip_y: true,
             ..Tile8::default()
         },
     ];
@@ -182,44 +182,44 @@ pub fn map_tile16_list() -> Vec<Tile16> {
         Tile8::from(92),
         Tile8 {
             index: 92,
-            flipx: true,
+            flip_x: true,
             ..Tile8::default()
         },
         Tile8 {
             index: 92,
-            flipy: true,
+            flip_y: true,
             ..Tile8::default()
         },
         Tile8 {
             index: 92,
-            flipx: true,
-            flipy: true,
+            flip_x: true,
+            flip_y: true,
             ..Tile8::default()
         },
     ];
     tile16_list[26] = [
         Tile8 {
             index: 81,
-            flipx: true,
-            flipy: true,
+            flip_x: true,
+            flip_y: true,
             rotate: true,
         },
         Tile8 {
             index: 65,
-            flipx: true,
-            flipy: true,
+            flip_x: true,
+            flip_y: true,
             rotate: true,
         },
         Tile8 {
             index: 80,
-            flipx: true,
-            flipy: true,
+            flip_x: true,
+            flip_y: true,
             rotate: true,
         },
         Tile8 {
             index: 64,
-            flipx: true,
-            flipy: true,
+            flip_x: true,
+            flip_y: true,
             rotate: true,
         },
     ];
@@ -227,25 +227,25 @@ pub fn map_tile16_list() -> Vec<Tile16> {
         Tile8::from(93),
         Tile8 {
             index: 93,
-            flipx: true,
+            flip_x: true,
             ..Tile8::default()
         },
         Tile8 {
             index: 93,
-            flipy: true,
+            flip_y: true,
             ..Tile8::default()
         },
         Tile8 {
             index: 93,
-            flipx: true,
-            flipy: true,
+            flip_x: true,
+            flip_y: true,
             ..Tile8::default()
         },
     ];
     tile16_list
 }
 
-fn decode_graphics(bytes: Vec<u8>) -> Vec<Tile8Data> {
+fn decode_graphics(bytes: &[u8]) -> Vec<Tile8Data> {
     bytes
         .chunks(2)
         .collect::<Vec<_>>()
@@ -256,8 +256,8 @@ fn decode_graphics(bytes: Vec<u8>) -> Vec<Tile8Data> {
                 .map(|col| {
                     (0..8)
                         .map(|index| {
-                            (col[0] & 1 << (7 - index) != 0) as u8
-                                + (col[1] & 1 << (7 - index) != 0) as u8 * 2
+                            u8::from(col[0] & (1 << (7 - index)) != 0)
+                                + u8::from(col[1] & (1 << (7 - index)) != 0) * 2
                         })
                         .collect()
                 })

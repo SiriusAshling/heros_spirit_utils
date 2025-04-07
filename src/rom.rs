@@ -60,12 +60,13 @@ impl Index {
     }
 
     fn insert(&mut self, name: &str, index: usize) {
+        #[allow(clippy::case_sensitive_file_extension_comparisons)]
         match name {
             "graphics.bin" => self.graphics = Some(index),
             name if name.starts_with("map") => self.maps.push(index),
             "10" | "bunnyover" | "fallenone" | "haphy" | "haphyover" | "hh" | "hhp" | "meow"
             | "ninjabunny" | "rain1" | "rain2" | "rainsplash" | "rawr" | "warrior" | "winter" => {
-                self.images.push(index)
+                self.images.push(index);
             }
             name if name.ends_with(".png") => self.images.push(index),
             name if name.starts_with("sfx") || name.ends_with(".ogg") => self.sounds.push(index),

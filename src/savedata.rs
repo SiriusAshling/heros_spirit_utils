@@ -46,7 +46,7 @@ impl Position {
     pub fn encode(&self) -> String {
         format!(
             "{}.{}.{}.{}",
-            self.map as u8, self.x, self.y, self.direction as u8
+            self.map, self.x, self.y, self.direction as u8
         )
     }
 }
@@ -180,7 +180,7 @@ fn unscramble(mut data: String) -> Result<(usize, SaveDat)> {
     Ok((steps, serde_json::from_str(&second_iteration[..end])?))
 }
 
-fn scramble(steps: usize, data: SaveDat) -> Result<String> {
+fn scramble(steps: usize, data: &SaveDat) -> Result<String> {
     let mut first_iteration = String::new();
     let data = serde_json::to_string(&data)?;
     let mut len = data.len();
@@ -203,7 +203,7 @@ fn scramble(steps: usize, data: SaveDat) -> Result<String> {
     }
 
     // I wish I knew why the output is broken sometimes...
-    if let Some((index, _)) = second_iteration.match_indices('}').skip(2).next() {
+    if let Some((index, _)) = second_iteration.match_indices('}').nth(2) {
         second_iteration.remove(index);
     }
 
@@ -211,7 +211,7 @@ fn scramble(steps: usize, data: SaveDat) -> Result<String> {
 }
 
 pub fn decode(path: &str, write_completion: bool) -> Result<SavePretty> {
-    let data = util::read_to_string(&path)?;
+    let data = util::read_to_string(path)?;
     let (steps, savedat) = unscramble(data)?;
     let SaveDat {
         position,
@@ -270,12 +270,7 @@ pub fn decode(path: &str, write_completion: bool) -> Result<SavePretty> {
     util::write(format!("{path}.json"), out)?;
 
     if write_completion {
-        let completion_column = pretty
-            .inventory
-            .completion_column()
-            .into_iter()
-            .map(|value| value.to_string())
-            .join("\n");
+        let completion_column = pretty.inventory.completion_column().into_iter().join("\n");
         util::write(
             format!("completion/{path}_completion.txt"),
             completion_column,
@@ -319,7 +314,7 @@ pub fn encode(path: impl AsRef<Path>) -> Result<()> {
         label,
     };
 
-    let out = scramble(steps, savedat)?;
+    let out = scramble(steps, &savedat)?;
     util::write(path, out)?;
 
     Ok(())

@@ -1,6 +1,6 @@
-use crate::Result;
 use crate::rom::{self, RomReader};
 use crate::sprite::SpriteData;
+use crate::Result;
 
 pub fn parse_maps(rom: &mut RomReader) -> Result<Vec<Map>> {
     rom.index
@@ -8,7 +8,7 @@ pub fn parse_maps(rom: &mut RomReader) -> Result<Vec<Map>> {
         .iter()
         .map(|index| {
             let bytes = rom::read_by_index(&mut rom.archive, *index)?;
-            let map = decode_map(bytes)?;
+            let map = decode_map(&bytes)?;
             Ok(map)
         })
         .collect()
@@ -111,7 +111,7 @@ pub fn map_name(map: u8) -> &'static str {
     }
 }
 
-fn decode_map(bytes: Vec<u8>) -> Result<Map> {
+fn decode_map(bytes: &[u8]) -> Result<Map> {
     let identifier = bytes[0];
     let width = bytes[1];
     let width_usize = width as usize;
@@ -218,7 +218,7 @@ pub fn encode_map(map: Map) -> Vec<u8> {
 
                 for bit_index in (0..8).rev() {
                     let position = (10963 * map.identifier as usize + index * 8) % (1 + bit_index);
-                    byte |= (bits.remove(position) as u8) << bit_index;
+                    byte |= (u8::from(bits.remove(position))) << bit_index;
                 }
                 byte
             }),
