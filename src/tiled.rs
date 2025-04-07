@@ -99,14 +99,14 @@ impl Map {
             .map(|col| {
                 col.iter()
                     .map(|tile| u16::from(*tile) + TILE_OFFSET)
-                    .format(", ")
+                    .format_with(", ", |tile, f| f(&format_args!("{tile:02}")))
             })
             .join(",\n");
 
         let map_is_missing_last_tile =
             self.tiles.first().unwrap().len() != self.tiles.last().unwrap().len();
         if map_is_missing_last_tile {
-            csv.push_str(", 0");
+            csv.push_str(", 00");
         }
 
         csv
