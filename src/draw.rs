@@ -354,6 +354,7 @@ fn draw_sprite_onto(
                 109
             }
             Things::UnderworldKeyhole => 84,
+            Things::Transfer | Things::Warp => return,
         },
         Sprite::Other(_) => return,
     };

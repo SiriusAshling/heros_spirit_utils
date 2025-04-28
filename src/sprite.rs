@@ -159,6 +159,8 @@ impl Ord for Enemy {
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Things {
+    Transfer,
+    Warp,
     CompassWall,
     NGMountain,
     NGPMountain,
@@ -259,6 +261,7 @@ impl Sprite {
 impl From<u8> for Sprite {
     fn from(id: u8) -> Self {
         match id {
+            0 => Sprite::Things(Things::Transfer),
             1 => Sprite::Door(Door::Gold),
             2 | 53 => Sprite::Collectible(Collectible::GoldKey),
             3 | 24 | 69 | 70 => Sprite::Collectible(Collectible::Sword),
@@ -272,6 +275,7 @@ impl From<u8> for Sprite {
             11 => Sprite::Gear(Gear::Boots),
             12 => Sprite::Gear(Gear::Compass),
             13 => Sprite::Things(Things::CompassWall),
+            15 => Sprite::Things(Things::Warp),
             22 => Sprite::Door(Door::Blue),
             23 => Sprite::Collectible(Collectible::BlueKey),
             25 => Sprite::WindRoute,
