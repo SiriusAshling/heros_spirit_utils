@@ -4,8 +4,10 @@ use std::{fs, io};
 use image::ImageFormat;
 use image::RgbaImage;
 
+use crate::draw::DrawData;
 use crate::graphics::TileData;
 use crate::map::{self, Map};
+use crate::map_meta::{self, MapColors};
 use crate::rom::{ArchiveReader, RomReader};
 use crate::{draw, global, missing, savedata, stats, util, Result};
 
@@ -24,6 +26,8 @@ pub fn export(rom: Option<PathBuf>) {
 
     let tile_data = util::feedback("Parse graphics", TileData::parse(&mut rom));
     let maps = util::feedback("Parse maps", map::parse_maps(&mut rom));
+    let map_colors = util::feedback("Parse maps", MapColors::parse(&mut rom));
+    let map_meta = util::feedback("Parse map meta", map_meta::parse_map_meta(&mut rom));
 
     if let Some(tile_data) = &tile_data {
         util::feedback("Export graphics", export_tilesets(tile_data));
@@ -40,30 +44,51 @@ pub fn export(rom: Option<PathBuf>) {
             savedata.and(savedatb).and(savedatc).and(bunny)
         });
 
-        if let Some(tile_data) = tile_data {
-            util::feedback(
-                "Export maps",
-                export_maps("rom_files/Maps", &maps, &tile_data),
-            );
+        if let (Some(tile_data), Some(map_colors), Some(map_meta)) =
+            (tile_data, map_colors, map_meta)
+        {
+            let data = DrawData {
+                tile_data,
+                map_colors,
+                map_meta,
+            };
+
+            util::feedback("Export maps", export_maps("rom_files/Maps", &maps, &data));
 
             let maps = maps
                 .into_iter()
                 .map(|map| {
                     let identifier = map.identifier;
-                    let map = draw::draw_map(map, &tile_data);
+                    let map = draw::draw_map(map, &data);
                     util::feedback(
                         format!("Draw map {}", map::map_name(identifier)),
-                        export_map_image("rom_files/Maps/images", identifier, &map),
+                        export_map_image(identifier, &map),
                     );
                     (identifier, map)
                 })
                 .collect();
-            util::feedback(
-                "Draw world map",
-                export_full_map_image(&draw::merge_maps(maps)),
-            );
+
+            for (name, map) in draw::merge_maps(maps) {
+                util::feedback(format!("Draw {name}"), export_image(name, &map));
+            }
         }
     }
+
+    if let Some(index) = rom.index.map_colors {
+        util::feedback(
+            "Export graphics",
+            export_file("rom_files/Maps/Metadata", &mut rom.archive, index),
+        );
+    }
+
+    util::feedback(
+        "Export map meta",
+        export_files(
+            "rom_files/Maps/Metadata",
+            &mut rom.archive,
+            &rom.index.map_meta,
+        ),
+    );
 
     util::feedback(
         "Export images",
@@ -72,12 +97,7 @@ pub fn export(rom: Option<PathBuf>) {
 
     util::feedback(
         "Export sounds",
-        export_files("rom_files/SFX", &mut rom.archive, &rom.index.sounds),
-    );
-
-    util::feedback(
-        "Export music",
-        export_files("rom_files/Music", &mut rom.archive, &rom.index.music),
+        export_files("rom_files", &mut rom.archive, &rom.index.audio),
     );
 
     util::feedback(
@@ -98,48 +118,53 @@ fn export_tilesets(tile_data: &TileData) -> Result<()> {
 }
 
 fn export_files(path: &str, archive: &mut ArchiveReader, indices: &[usize]) -> Result<()> {
-    for index in indices.iter().copied() {
-        let mut reader = archive.by_index(index)?;
-        let name = reader
-            .enclosed_name()
-            .ok_or_else(|| format!("Failed to sanitize filename \"{}\"", reader.name()))?;
-        let mut file_path = PathBuf::from(path);
-        file_path.push(name);
-        let mut writer = util::file_create(file_path)?;
-        io::copy(&mut reader, &mut writer)?;
+    for index in indices {
+        export_file(path, archive, *index)?;
     }
 
     Ok(())
 }
 
-fn export_maps(path: impl AsRef<Path>, maps: &[Map], tile_data: &TileData) -> Result<()> {
+fn export_file(path: &str, archive: &mut ArchiveReader, index: usize) -> Result<()> {
+    let mut reader = archive.by_index(index)?;
+    let name = reader
+        .enclosed_name()
+        .ok_or_else(|| format!("Failed to sanitize filename \"{}\"", reader.name()))?;
+    let mut file_path = PathBuf::from(path);
+    file_path.push(name);
+    let mut writer = util::file_create(file_path)?;
+    io::copy(&mut reader, &mut writer)?;
+
+    Ok(())
+}
+
+fn export_maps(path: impl AsRef<Path>, maps: &[Map], data: &DrawData) -> Result<()> {
     for map in maps {
         let mut path = path.as_ref().to_owned();
         path.push(format!("map{:02}.tmx", map.identifier));
 
-        util::write(path, map.to_tmx(tile_data)?)?;
+        util::write(path, map.to_tmx(data)?)?;
     }
 
     Ok(())
 }
 
-fn export_map_image(path: impl AsRef<Path>, identifier: u8, map: &RgbaImage) -> Result<()> {
-    let mut path = path.as_ref().to_owned();
-    fs::create_dir_all(&path)?;
+fn export_map_image(identifier: u8, map: &RgbaImage) -> Result<()> {
     let map_name = map::map_name(identifier);
-    path.push(format!("{identifier}_{map_name}.png"));
 
-    map.save_with_format(path, ImageFormat::Png)?;
-
-    Ok(())
+    export_image(format!("{identifier}_{map_name}.png"), map)
 }
 
-fn export_full_map_image(map: &RgbaImage) -> Result<()> {
-    let mut path = PathBuf::from("rom_files/Maps/images");
-    fs::create_dir_all(&path)?;
-    path.push("FullMap.png");
+fn export_image<P: AsRef<Path>>(name: P, map: &RgbaImage) -> Result<()> {
+    fn export_image(name: &Path, map: &RgbaImage) -> Result<()> {
+        let mut path = PathBuf::from("rom_files/Maps/images");
+        fs::create_dir_all(&path)?;
+        path.push(name);
 
-    map.save_with_format(path, ImageFormat::Png)?;
+        map.save_with_format(path, ImageFormat::Png)?;
 
-    Ok(())
+        Ok(())
+    }
+
+    export_image(name.as_ref(), map)
 }

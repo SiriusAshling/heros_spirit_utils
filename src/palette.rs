@@ -1,7 +1,7 @@
 use crate::data::{
-    COLOR_TABLE, ENEMY_PALETTES, MAP_PALETTES, MAP_PALETTE_TABLE, PALETTES, SPRITE_PALETTES,
-    SPRITE_PALETTE_TABLE,
+    COLOR_TABLE, ENEMY_PALETTES, MAP_PALETTE_TABLE, SPRITE_PALETTES, SPRITE_PALETTE_TABLE,
 };
+use crate::draw::DrawData;
 use crate::map;
 
 pub const DEFAULT_PALETTE: [image::Rgba<u8>; 4] = [
@@ -23,33 +23,32 @@ pub fn lookup_palette(colors: [u8; 4]) -> [image::Rgba<u8>; 4] {
     ]
 }
 
-pub fn get_map_palette(index: usize, map: u8) -> [image::Rgba<u8>; 4] {
-    if let Some(index) = MAP_PALETTE_TABLE.get(index) {
-        let index = *index as usize;
+impl DrawData {
+    pub fn get_map_palette(&self, index: usize, map: u8) -> [image::Rgba<u8>; 4] {
+        if let Some(index) = MAP_PALETTE_TABLE.get(index) {
+            let index = *index as usize;
 
-        let colors = get_map_palette_colors(index, map);
+            let colors = self.get_map_palette_colors(index, map);
 
-        lookup_palette(colors)
-    } else {
-        DEFAULT_PALETTE
+            lookup_palette(colors)
+        } else {
+            DEFAULT_PALETTE
+        }
     }
-}
 
-fn get_map_palette_colors(index: usize, map: u8) -> [u8; 4] {
-    let map_offset = match map {
-        map::GLITCH => return get_glitch_palette_colors(index),
-        map::FALLEN_WORLD => 29,
-        map::MOONWELL => 31,
-        map::HHM_CASTLE_GROUNDS => 1,
-        map::HHM_CASTLE_MONILLUD => 23,
-        map::HHM_STRANGE_AREA => 22,
-        map::HHM_THE_UNDERWORLD => MAP_PALETTES[39] as usize,
-        map::HHM_THRONE_ROOM => 36,
-        map::SMUGGLERS_ROAD | map::SMUGGLERS_RUIN => 15,
-        _ => MAP_PALETTES[map as usize] as usize,
-    };
+    fn get_map_palette_colors(&self, index: usize, map: u8) -> [u8; 4] {
+        if map == map::GLITCH {
+            get_glitch_palette_colors(index)
+        } else {
+            let palette_index = self.get_palette_index(map);
+            self.map_colors.map_colors[palette_index % self.map_colors.map_colors.len()][index]
+        }
+    }
 
-    PALETTES[map_offset * 5 + index]
+    fn get_palette_index(&self, map: u8) -> usize {
+        // TODO variants
+        self.map_meta[&(map as usize)].colors
+    }
 }
 
 fn get_glitch_palette_colors(index: usize) -> [u8; 4] {
@@ -103,12 +102,6 @@ pub fn get_sprite_palette(index: usize, map_id: u8) -> [image::Rgba<u8>; 4] {
 
 pub fn get_enemy_palette(index: usize) -> [image::Rgba<u8>; 4] {
     let colors = ENEMY_PALETTES[index * 2];
-
-    lookup_palette(colors)
-}
-
-pub fn get_map_sprite_palette(tile: u8, index: usize) -> [image::Rgba<u8>; 4] {
-    let colors = PALETTES[(index % 29) * 5 + tile as usize];
 
     lookup_palette(colors)
 }

@@ -20,11 +20,10 @@ fn import_rom(rom: PathBuf) -> Result<()> {
 
     import_tilesets(&mut rom)?;
     import_maps(&mut rom)?;
-    import_files("Textures", &mut rom)?;
-    import_files("SFX", &mut rom)?;
-    import_files("Music", &mut rom)?;
-    import_files("Shaders", &mut rom)?;
-    import_files("Other", &mut rom)?;
+    import_files("Textures", "", &mut rom)?;
+    import_files("Audio", "Audio/", &mut rom)?;
+    import_files("Shaders", "", &mut rom)?;
+    import_files("Other", "", &mut rom)?;
 
     Ok(())
 }
@@ -59,14 +58,14 @@ fn import_maps(rom: &mut RomWriter) -> Result<()> {
     Ok(())
 }
 
-fn import_files(folder: &str, rom: &mut RomWriter) -> Result<()> {
+fn import_files(folder: &str, prefix: &str, rom: &mut RomWriter) -> Result<()> {
     for file in util::read_dir(format!("rom_files/{folder}"))? {
         let file = file?;
         let file_name = file.file_name();
         let file_name = file_name
             .to_str()
             .ok_or_else(|| format!("invalid filename \"{}\"", file_name.to_string_lossy()))?;
-        rom.write(file_name, &util::read(file.path())?)?;
+        rom.write(&format!("{prefix}{file_name}"), &util::read(file.path())?)?;
     }
 
     Ok(())

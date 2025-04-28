@@ -42,9 +42,10 @@ pub fn read_by_index(archive: &mut ArchiveReader, index: usize) -> Result<Vec<u8
 pub struct Index {
     pub graphics: Option<usize>,
     pub maps: Vec<usize>,
+    pub map_colors: Option<usize>,
+    pub map_meta: Vec<usize>,
     pub images: Vec<usize>,
-    pub sounds: Vec<usize>,
-    pub music: Vec<usize>,
+    pub audio: Vec<usize>,
     pub shaders: Vec<usize>,
     pub other: Vec<usize>,
 }
@@ -63,14 +64,15 @@ impl Index {
         #[allow(clippy::case_sensitive_file_extension_comparisons)]
         match name {
             "graphics.bin" => self.graphics = Some(index),
-            name if name.starts_with("map") => self.maps.push(index),
+            name if name.starts_with("Maps/map") => self.maps.push(index),
+            "Maps/Metadata/MapColors.json" => self.map_colors = Some(index),
+            name if name.starts_with("Maps/Metadata/") => self.map_meta.push(index),
             "10" | "bunnyover" | "fallenone" | "haphy" | "haphyover" | "hh" | "hhp" | "meow"
             | "ninjabunny" | "rain1" | "rain2" | "rainsplash" | "rawr" | "warrior" | "winter" => {
                 self.images.push(index);
             }
             name if name.ends_with(".png") => self.images.push(index),
-            name if name.starts_with("sfx") || name.ends_with(".ogg") => self.sounds.push(index),
-            name if name.starts_with("track") => self.music.push(index),
+            name if name.starts_with("Audio/") => self.audio.push(index),
             "retrofx" => self.shaders.push(index),
             name if name.ends_with(".glsl") => self.shaders.push(index),
             _ => self.other.push(index),

@@ -1,5 +1,5 @@
 use crate::data::{
-    ENEMY_TILE_BITS, ENEMY_TILE_BIT_TABLE, ENEMY_TILE_FLIPS, MAP_TILE_BITS, SPRITE_TILE_BITS,
+    ENEMY_TILE_BITS, ENEMY_TILE_BIT_TABLE, ENEMY_TILE_FLIPS, SPRITE_TILE_BITS,
     SPRITE_TILE_BIT_TABLE, SPRITE_TILE_FLIPS, SPRITE_TILE_FLIP_TABLE, TILE_16S,
 };
 use crate::rom::{self, RomReader};
@@ -10,7 +10,7 @@ pub struct TileData {
     pub map_tile16_list: Vec<Tile16>,
     pub sprite_tile16_list: Vec<Tile16>,
     pub enemy_tile16_list: Vec<Tile16>,
-    pub map_sprite_tile16_list: Vec<Tile16>,
+    // TODO map sprite tiles were supported in a previous version
 }
 
 pub type Tile8Data = Vec<Vec<u8>>;
@@ -25,7 +25,6 @@ impl TileData {
             map_tile16_list: map_tile16_list(),
             sprite_tile16_list: sprite_tile16_list(),
             enemy_tile16_list: enemy_tile16_list(),
-            map_sprite_tile16_list: map_sprite_tile16_list(),
         })
     }
 }
@@ -103,34 +102,6 @@ fn build_sprite_tile(id: usize) -> Tile16 {
     ]
 }
 
-fn build_map_sprite_tile(index: usize) -> Tile16 {
-    let id = index / 29;
-    let bit_index = id * 4;
-    let flip_index = if id == 2 { 60 } else { 0 };
-
-    let build_tile_8 = |tile_index| {
-        let by_three = tile_index * 3;
-
-        let index = MAP_TILE_BITS[bit_index + tile_index];
-        let flip_x = SPRITE_TILE_FLIPS[flip_index + by_three];
-        let flip_y = SPRITE_TILE_FLIPS[flip_index + by_three + 1];
-        let rotate = SPRITE_TILE_FLIPS[flip_index + by_three + 2];
-        Tile8 {
-            index,
-            flip_x,
-            flip_y,
-            rotate,
-        }
-    };
-
-    [
-        build_tile_8(0),
-        build_tile_8(1),
-        build_tile_8(2),
-        build_tile_8(3),
-    ]
-}
-
 pub fn enemy_tile16_list() -> Vec<Tile16> {
     (0..ENEMY_TILE_BIT_TABLE.len())
         .map(build_enemy_tile)
@@ -141,10 +112,6 @@ pub fn sprite_tile16_list() -> Vec<Tile16> {
     (0..SPRITE_TILE_BIT_TABLE.len())
         .map(build_sprite_tile)
         .collect()
-}
-
-pub fn map_sprite_tile16_list() -> Vec<Tile16> {
-    (0..116).map(build_map_sprite_tile).collect()
 }
 
 pub fn map_tile16_list() -> Vec<Tile16> {

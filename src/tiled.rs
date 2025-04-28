@@ -8,7 +8,7 @@ use image::ImageFormat;
 use itertools::Itertools;
 
 use crate::data::TERRAIN_FLAGS;
-use crate::graphics::TileData;
+use crate::draw::DrawData;
 use crate::map::Map;
 use crate::sprite::{Sprite, SpriteData};
 use crate::Result;
@@ -18,7 +18,7 @@ const TILE_OFFSET: u16 = 1;
 const SPRITE_OFFSET: u16 = TILE_OFFSET + u8::MAX as u16 + 1;
 
 impl Map {
-    pub fn to_tmx(&self, tile_data: &TileData) -> Result<String> {
+    pub fn to_tmx(&self, data: &DrawData) -> Result<String> {
         let width = self.tiles[0].len();
         let height = self.tiles.len();
 
@@ -26,8 +26,8 @@ impl Map {
             include_str!("tiled_map_template.xml"),
             width,
             height,
-            self.tiles_tileset(tile_data)?,
-            self.sprite_tileset(tile_data)?,
+            self.tiles_tileset(data)?,
+            self.sprite_tileset(data)?,
             self.tiles_tiledata(),
             self.sprites_tiledata()
         );
@@ -48,14 +48,14 @@ impl Map {
         })
     }
 
-    fn tiles_tileset(&self, tile_data: &TileData) -> Result<String> {
+    fn tiles_tileset(&self, data: &DrawData) -> Result<String> {
         let mut max = TERRAIN_FLAGS.len() as u8;
         if self.identifier == map::GLITCH {
             max -= 3;
         }
         let tiles_tmx = (1..max)
             .map(|id| {
-                let image = draw::draw_tile(id, self.identifier, tile_data);
+                let image = draw::draw_tile(id, self.identifier, data);
                 let mut bytes = Cursor::new(Vec::new());
                 image.write_to(&mut bytes, ImageFormat::Bmp)?;
                 let image_string = BASE64_STANDARD.encode(bytes.get_ref());
@@ -70,10 +70,10 @@ impl Map {
         ))
     }
 
-    fn sprite_tileset(&self, tile_data: &TileData) -> Result<String> {
+    fn sprite_tileset(&self, data: &DrawData) -> Result<String> {
         let tiles_tmx = (u8::MIN..u8::MAX)
             .map(|id| {
-                let image = draw::draw_sprite(id, self.identifier, tile_data);
+                let image = draw::draw_sprite(id, self.identifier, data);
                 let mut bytes = Cursor::new(Vec::new());
                 image.write_to(&mut bytes, ImageFormat::Bmp)?;
                 let image_string = BASE64_STANDARD.encode(bytes.get_ref());

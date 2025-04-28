@@ -13,6 +13,7 @@ mod graphics;
 mod import;
 mod inventory;
 mod map;
+mod map_meta;
 mod missing;
 mod palette;
 mod rom;
