@@ -1,8 +1,10 @@
 mod export;
 mod import;
+mod randomize;
 
 pub use export::{export_all, export_rom};
 pub use import::{import_all, import_rom, import_saves};
+pub use randomize::randomize;
 
 use std::fmt::{self, Display};
 use std::fs::DirEntry;
@@ -29,6 +31,14 @@ pub struct Cli {
 #[derive(Subcommand, EnumDiscriminants)]
 #[strum_discriminants(derive(VariantArray, Display), strum(serialize_all = "kebab-case"))]
 pub enum Action {
+    /// Randomized transfer destinations and item locations
+    ///
+    /// Roms are looked for in a "Roms/" subfolder.
+    /// Additionally the file "rando/logic.json" is required.
+    Randomize {
+        #[command(flatten)]
+        args: RomArgs,
+    },
     /// Exports the rom and save files into formats suitable for viewing and editing.
     ///
     /// If it can find both the rom and save files, it can compare the two to determine which items you're missing.
@@ -69,6 +79,9 @@ impl FromPrompt for Action {
             Select::new("Select an action", ActionDiscriminants::VARIANTS.to_vec()).prompt()?;
 
         let action = match action {
+            ActionDiscriminants::Randomize => Action::Randomize {
+                args: Default::default(),
+            },
             ActionDiscriminants::Export => Action::Export {
                 args: Default::default(),
             },

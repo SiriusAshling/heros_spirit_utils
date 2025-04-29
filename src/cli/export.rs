@@ -46,7 +46,7 @@ impl Rom {
             export_tilesets(&data).feedback("Export graphics");
 
             if let Some(maps) = &self.maps {
-                export_maps("rom_files/Maps", &maps, &data).feedback("Export maps");
+                export_maps("rom_files/Maps", maps, &data).feedback("Export maps");
             }
         }
 
@@ -80,7 +80,7 @@ impl Rom {
 
     pub fn export_extras(&self) {
         if let Some(maps) = &self.maps {
-            export_stats(&maps).feedback("Gather stats");
+            export_stats(maps).feedback("Gather stats");
 
             if let (Some(tile_data), Some(map_colors), Some(map_meta)) =
                 (&self.tile_data, &self.map_colors, &self.map_meta)
@@ -91,13 +91,13 @@ impl Rom {
                     map_meta,
                 };
 
-                export_maps("rom_files/Maps", &maps, &data).feedback("Export maps");
+                export_maps("rom_files/Maps", maps, &data).feedback("Export maps");
 
                 let maps = maps
-                    .into_iter()
+                    .iter()
                     .map(|map| {
                         let identifier = map.identifier;
-                        let map = data.draw_map(&map);
+                        let map = data.draw_map(map);
 
                         export_map_image(identifier, &map)
                             .feedback(format!("Draw map {}", map::map_name(identifier)));

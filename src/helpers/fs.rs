@@ -117,7 +117,7 @@ pub fn file_create<P: AsRef<Path>>(path: P) -> Result<File> {
 }
 
 pub fn files_in_dir<P: AsRef<Path>>(path: P) -> Result<impl Iterator<Item = DirEntry>> {
-    Ok(read_dir(path)?.into_iter().flatten())
+    Ok(read_dir(path)?.flatten())
 }
 
 #[allow(clippy::needless_pass_by_value)]
