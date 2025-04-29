@@ -1,27 +1,44 @@
-# To use for ROM hacking
-
 **Disclaimer: This tool is not user friendly nor official. It's just a fun small pet project.**
 
-Put into a folder with your rom (in the game files).
-Pass "export" to export the rom. Files will be written into a folder "rom_files".
+# To use for randomization
 
-Pass "import" to import the rom. Your rom will be overwritten (best make a backup of the vanilla rom).
+## Setup
+
+1. Put into a folder next to `Roms/` (in the game files).
+2. Copy the `rando` folder from this repository next to it (the one with `logic.json` inside).
+
+## Generate seeds
+
+Pass `randomize` to create a new `Roms/randomizer.hsrom`.
+
+## Play generated seeds
+
+Edit `rom.txt` in your game files. It should contain `main.hsrom` by default. Change its contents to `randomizer.hsrom`.
+
+# To use for ROM hacking
+
+Put into a folder next to `Roms/` (in the game files).
+
+Pass `export` to export the rom. Files will be written into a folder `rom_files`.
+
+Pass `import` to import the rom. Your rom will be overwritten (best make a backup of the vanilla rom).
 
 ## Files you can edit
 
-- rom_files/Graphics/tile8.bmp: Only use the four pixel colors already in the image, the game will color the tiles based on palette
-- rom_files/Maps/map\*\*.tmx: Use the Tiled editor to edit. More below
-- rom_files/Music/\*
-- rom_files/SFX/\*
-- rom_files/Textures/\*
-- rom_files/World/\*
+- `rom_files/Graphics/tile8.bmp`: Only use the four pixel colors already in the image, the game will color the tiles based on palette
+- `rom_files/Maps/map*.tmx`: Use the Tiled editor to edit. More below
+- `rom_files/Maps/Metadata/*`
+- `rom_files/Audio/*`
+- `rom_files/Shaders/*`
+- `rom_files/Textures/*`
+- `rom_files/Other/*`
 
 ## Files you can't edit
 
-- rom_files/Graphics/tile16: These are just pieced together from the tile8 data for convenient viewing of what the tiles might look like in reality.
-- rom_files/Maps/images: Rendered versions of the maps for convenience
-- rom_files/Maps/stats: Collectible and Enemy statistics about the maps
-- completion/\*: Information about missing items from savefiles
+- `rom_files/Graphics/tile16`: These are just pieced together from the tile8 data for convenient viewing of what the tiles might look like in reality.
+- `rom_files/Maps/images`: Rendered versions of the maps for convenience
+- `rom_files/Maps/stats`: Collectible and Enemy statistics about the maps
+- `completion/*`: Information about missing items from savefiles
 
 ## Editing maps
 
@@ -47,24 +64,24 @@ For simple sprites like Swords or Wind Routes you can just place them. More comp
 
 #### **Map Transfers**
 
-The first item in the Sprites tileset, name "Other(0)". Add 4 custom properties:
+The first item in the Sprites tileset, name `Other(0)`. Add 4 custom properties:
 
-- "byte_1": target map
-- "byte_2": target x
-- "byte_3": target y
-- "byte_4": face direction on exit (2, 4, 6 or 8)
+- `byte_1`: target map
+- `byte_2`: target x
+- `byte_3`: target y
+- `byte_4`: face direction on exit (2, 4, 6 or 8)
 
 #### **Silent in-map Warps**
 
-The 16th item in the Sprites tileset, name "Other(15)". Add 2 custom properties:
+The 16th item in the Sprites tileset, name `Other(15)`. Add 2 custom properties:
 
-- "byte_1": target x
-- "byte_2": target y
+- `byte_1`: target x
+- `byte_2`: target y
 
 # To use for Save hacking
 
 Put into a folder with your save files (in local app data).
 
-Pass "export" to export the saves to json.
+Pass `export` to export the saves to json.
 
-Pass "import" to import the json with any edits, your saves will be overwritten.
+Pass `import` to import the json with any edits, your saves will be overwritten.
