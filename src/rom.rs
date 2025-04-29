@@ -1,20 +1,14 @@
-use std::fs::{self, DirEntry, File};
+use std::fs::File;
 use std::io::{BufReader, Read, Write};
 use std::path::PathBuf;
 
 use zip::write::SimpleFileOptions;
 use zip::{ZipArchive, ZipWriter};
 
-use crate::util;
+use crate::graphics::TileData;
+use crate::helpers::{self, ResultExtension};
+use crate::map::{Map, MapColors, MapMeta};
 use crate::Result;
-
-pub fn available_roms() -> Vec<DirEntry> {
-    fs::read_dir("Roms")
-        .into_iter()
-        .flatten()
-        .flatten()
-        .collect()
-}
 
 pub type ArchiveReader = ZipArchive<BufReader<File>>;
 pub struct RomReader {
@@ -23,11 +17,12 @@ pub struct RomReader {
 }
 
 impl RomReader {
-    pub fn open(rom: PathBuf) -> Result<Self> {
-        let file = util::file_open(rom)?;
-        let archive = ZipArchive::new(BufReader::new(file))?;
+    pub fn open(rom: PathBuf) -> Option<Self> {
+        let archive = helpers::file_open(rom)
+            .and_then(|file| Ok(ZipArchive::new(BufReader::new(file))?))
+            .ok_feedback("Read rom")?;
         let index = Index::new(&archive);
-        Ok(Self { archive, index })
+        Some(Self { archive, index })
     }
 }
 
@@ -86,7 +81,7 @@ pub struct RomWriter {
 
 impl RomWriter {
     pub fn create(rom: PathBuf) -> Result<Self> {
-        let archive = ZipWriter::new(util::file_create(rom)?);
+        let archive = ZipWriter::new(helpers::file_create(rom)?);
         Ok(Self { archive })
     }
 
@@ -95,5 +90,28 @@ impl RomWriter {
             .start_file(name, SimpleFileOptions::default())?;
         self.archive.write_all(bytes)?;
         Ok(())
+    }
+}
+
+pub struct Rom {
+    pub tile_data: Option<TileData>,
+    pub maps: Option<Vec<Map>>,
+    pub map_colors: Option<MapColors>,
+    pub map_meta: Option<std::collections::HashMap<usize, MapMeta>>,
+}
+
+impl Rom {
+    pub fn parse(rom: &mut RomReader) -> Self {
+        let tile_data = TileData::parse(rom).ok_feedback("Parse graphics");
+        let maps = Map::parse_all(rom).ok_feedback("Parse maps");
+        let map_colors = MapColors::parse(rom).ok_feedback("Parse map colors");
+        let map_meta = MapMeta::parse_all(rom).ok_feedback("Parse map meta");
+
+        Self {
+            tile_data,
+            maps,
+            map_colors,
+            map_meta,
+        }
     }
 }

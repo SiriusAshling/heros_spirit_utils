@@ -54,24 +54,26 @@ pub struct MapMeta {
     pub night_swords: u8,
 }
 
-pub fn parse_map_meta(rom: &mut RomReader) -> Result<HashMap<usize, MapMeta>> {
-    rom.index
-        .map_meta
-        .iter()
-        .map(|index: &usize| {
-            let file = rom.archive.by_index(*index)?;
-            let name = file.name();
-            let id = name
-                .strip_prefix("Maps/Metadata/map")
-                .and_then(|name| name.strip_suffix(".json"))
-                .ok_or_else(|| format!("invalid map meta file \"{name}\""))?;
-            let id = id.parse().map_err(|err| {
-                format!("invalid map meta identifier \"{id}\" in \"{name}\": {err}")
-            })?;
+impl MapMeta {
+    pub fn parse_all(rom: &mut RomReader) -> Result<HashMap<usize, Self>> {
+        rom.index
+            .map_meta
+            .iter()
+            .map(|index: &usize| {
+                let file = rom.archive.by_index(*index)?;
+                let name = file.name();
+                let id = name
+                    .strip_prefix("Maps/Metadata/map")
+                    .and_then(|name| name.strip_suffix(".json"))
+                    .ok_or_else(|| format!("invalid map meta file \"{name}\""))?;
+                let id = id.parse().map_err(|err| {
+                    format!("invalid map meta identifier \"{id}\" in \"{name}\": {err}")
+                })?;
 
-            let map_meta = serde_json::from_reader(file)?;
+                let map_meta = serde_json::from_reader(file)?;
 
-            Ok((id, map_meta))
-        })
-        .collect()
+                Ok((id, map_meta))
+            })
+            .collect()
+    }
 }

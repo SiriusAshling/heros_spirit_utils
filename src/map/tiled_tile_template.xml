@@ -1,0 +1,7 @@
+        <tile id="{}">
+            <image format="bmp">
+                <data encoding="base64">
+                    {}
+                </data>
+            </image>
+        </tile>

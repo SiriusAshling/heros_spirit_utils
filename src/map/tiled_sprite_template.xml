@@ -1,0 +1,10 @@
+        <tile id="{}">
+            <image format="bmp">
+                <data encoding="base64">
+                    {}
+                </data>
+            </image>
+            <properties>
+                <property name="name" type="string" value="{}"/>
+            </properties>
+        </tile>
