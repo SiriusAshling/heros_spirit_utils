@@ -51,16 +51,11 @@ impl Rom {
         }
 
         if let Some(index) = reader.index.map_colors {
-            export_file("rom_files/Maps/Metadata", &mut reader.archive, index)
-                .feedback("Export map colors");
+            export_file("rom_files", &mut reader.archive, index).feedback("Export map colors");
         }
 
-        export_files(
-            "rom_files/Maps/Metadata",
-            &mut reader.archive,
-            &reader.index.map_meta,
-        )
-        .feedback("Export map meta");
+        export_files("rom_files", &mut reader.archive, &reader.index.map_meta)
+            .feedback("Export map meta");
 
         export_files(
             "rom_files/Textures",
