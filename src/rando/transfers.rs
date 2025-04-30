@@ -28,7 +28,8 @@ pub fn generate_transfers<'a>(
     let mut map_transfers = vec![];
 
     while let Some(source) = choose_source(&mut groups, &mut ends, rng) {
-        let target = choose_target(&mut groups, rng).expect("unable to match up all transfers");
+        let target =
+            choose_target(&mut groups, &mut ends, rng).expect("unable to match up all transfers");
 
         logic_transfers.insert(source.1, target.0);
         logic_transfers.insert(target.1, source.0);
@@ -45,7 +46,7 @@ fn choose_source<'a>(
     rng: &mut Pcg64Mcg,
 ) -> Option<(&'a String, Id)> {
     if ends.is_empty() {
-        choose_target(groups, rng)
+        choose_target(groups, ends, rng)
     } else {
         Some(ends.choose_remove(rng))
     }
@@ -53,9 +54,14 @@ fn choose_source<'a>(
 
 fn choose_target<'a>(
     groups: &mut Vec<Vec<(&'a String, Id)>>,
+    ends: &mut Vec<(&'a String, Id)>,
     rng: &mut Pcg64Mcg,
 ) -> Option<(&'a String, Id)> {
     if groups.is_empty() {
+        if ends.len() == 1 {
+            return ends.pop();
+        }
+
         return None;
     }
 
@@ -63,8 +69,12 @@ fn choose_target<'a>(
     let group = &mut groups[index];
     let target = group.choose_remove(rng);
 
-    if group.is_empty() {
-        groups.swap_remove(index);
+    if group.len() < 2 {
+        let mut group = groups.swap_remove(index);
+
+        if let Some(end) = group.pop() {
+            ends.push(end);
+        }
     }
 
     Some(target)

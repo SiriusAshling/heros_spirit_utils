@@ -21,8 +21,11 @@ pub struct Id {
 
 impl Id {
     pub fn sprite(self, maps: &[Map]) -> &Option<SpriteData> {
-        let map = maps.iter().find(|m| m.identifier == self.map).unwrap();
-        &map.sprites[self.y][self.x]
+        &maps
+            .iter()
+            .find(|m| m.identifier == self.map)
+            .unwrap_or_else(|| panic!("unknown map identifier {}", self.map))
+            .sprites[self.y][self.x]
     }
 
     pub fn expect_sprite(self, maps: &[Map]) -> &SpriteData {
@@ -32,8 +35,11 @@ impl Id {
     }
 
     pub fn sprite_mut(self, maps: &mut [Map]) -> &mut Option<SpriteData> {
-        let map = maps.iter_mut().find(|m| m.identifier == self.map).unwrap();
-        &mut map.sprites[self.y][self.x]
+        &mut maps
+            .iter_mut()
+            .find(|m| m.identifier == self.map)
+            .unwrap_or_else(|| panic!("unknown map identifier {}", self.map))
+            .sprites[self.y][self.x]
     }
 }
 

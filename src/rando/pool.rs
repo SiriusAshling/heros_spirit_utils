@@ -26,6 +26,18 @@ impl Pool {
         Self { items }
     }
 
+    pub fn contains_all(&self, items: &[Sprite]) -> bool {
+        let mut iter = self.iter();
+
+        for item in items {
+            if !iter.any(|i| i == item) {
+                return false;
+            }
+        }
+
+        true
+    }
+
     pub fn choose_remove_filler(&mut self, rng: &mut Pcg64Mcg) -> Sprite {
         let mut skipped = vec![];
 

@@ -1,11 +1,21 @@
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    fmt::Display,
+    result::Result as StdResult,
+    str::{FromStr, Split},
+};
 
 use indexmap::IndexSet;
-use serde::Deserialize;
+use itertools::Itertools;
+use serde::{
+    de::{Error, Unexpected},
+    Deserialize, Deserializer,
+};
+use strum::{EnumDiscriminants, EnumString, VariantArray};
 
 use crate::{
     helpers::file_open,
-    map::{Door, Gear, Map, Sprite, Things},
+    map::{Collectible, Door, Gear, Map, Sprite, Things},
     Result,
 };
 
@@ -29,7 +39,7 @@ impl Logic {
             area.items.retain(|item, _| {
                 let sprite = item.expect_sprite(maps);
                 match sprite.kind.into() {
-                    Sprite::Collectible(_) => true,
+                    Sprite::Collectible(_) | Sprite::Gear(_) => true,
                     Sprite::Door(Door::Gold | Door::Silver | Door::Boulder)
                     | Sprite::Things(Things::NGPBoulder) => false,
                     other => panic!("unexpected {other:?} as item {item}"),
@@ -47,17 +57,14 @@ impl Logic {
         let mut groups = vec![];
 
         while let Some(&key) = remaining.iter().next() {
-            remaining.remove(key);
-
             let mut paths = vec![key];
-            let mut visited = HashSet::new();
             let mut group = vec![];
 
             while let Some(path) = paths.pop() {
-                if visited.contains(path) {
+                if !remaining.contains(path) {
                     continue;
                 }
-                visited.insert(path);
+                remaining.remove(path);
 
                 let area = self.get_area(path);
                 paths.extend(area.paths.keys());
@@ -134,19 +141,29 @@ impl<'logic> Reach<'logic> {
     fn is_met(&self, requirements: &Requirements, pool: &Pool) -> bool {
         requirements.iter().any(|requirements| {
             requirements.iter().all(|requirement| {
-                self.requirement(requirement)
-                    .is_none_or(|sprite| pool.contains(&sprite))
+                let items = self.required_items(requirement);
+                pool.contains_all(&items)
             })
         })
     }
 
-    fn requirement(&self, requirement: &Requirement) -> Option<Sprite> {
+    fn required_items(&self, requirement: &Requirement) -> Vec<Sprite> {
         match requirement {
-            Requirement::Ring => Some(Sprite::Gear(Gear::WindRing)),
-            Requirement::Id(id) => *self
+            Requirement::Ring => vec![Sprite::Gear(Gear::WindRing)],
+            Requirement::Charm => vec![Sprite::Gear(Gear::LavaCharm)],
+            Requirement::Swords(amount) => {
+                vec![Sprite::Collectible(Collectible::Sword); *amount as usize]
+            }
+            Requirement::Gems(amount) => {
+                vec![Sprite::Collectible(Collectible::Gem); *amount as usize]
+            }
+            Requirement::Id(id) => self
                 .door_requirements
                 .get(id)
-                .unwrap_or_else(|| panic!("Unknown requirement {id}")),
+                .unwrap_or_else(|| panic!("Unknown requirement {id}"))
+                .into_iter()
+                .copied()
+                .collect(),
         }
     }
 }
@@ -161,9 +178,88 @@ struct Area {
 
 type Requirements = Vec<Vec<Requirement>>;
 
-#[derive(Deserialize)]
+#[derive(EnumDiscriminants)]
+#[strum_discriminants(derive(VariantArray, EnumString))]
 enum Requirement {
     Ring,
-    #[serde(untagged)]
+    Charm,
+    Swords(u8),
+    Gems(u8),
     Id(Id),
+}
+
+impl RequirementDiscriminants {
+    fn describe_format(&self) -> &str {
+        match self {
+            Self::Ring => "Ring",
+            Self::Charm => "Charm",
+            Self::Swords => "Swords.<amount>",
+            Self::Gems => "Gems.<amount>",
+            Self::Id => "<map>.<x>.<y>",
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for Requirement {
+    fn deserialize<D>(deserializer: D) -> StdResult<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        fn invalid_variant<'de, D>(unexp: &str) -> D::Error
+        where
+            D: Deserializer<'de>,
+        {
+            Error::invalid_value(
+                Unexpected::Str(unexp),
+                &RequirementDiscriminants::VARIANTS
+                    .iter()
+                    .map(RequirementDiscriminants::describe_format)
+                    .format_with(" or ", |variant, f| f(&format_args!("\"{variant}\"")))
+                    .to_string()
+                    .as_str(),
+            )
+        }
+
+        fn parse_err<'de, E, D>(unexp: &str, err: E) -> D::Error
+        where
+            E: Display,
+            D: Deserializer<'de>,
+        {
+            Error::invalid_value(Unexpected::Str(unexp), &err.to_string().as_str())
+        }
+
+        fn extra_part<'de, T, D>(parts: &mut Split<char>, unexp: &str) -> StdResult<T, D::Error>
+        where
+            T: FromStr,
+            T::Err: Display,
+            D: Deserializer<'de>,
+        {
+            let part = parts.next().ok_or_else(|| invalid_variant::<D>(unexp))?;
+            part.parse().map_err(|err| parse_err::<_, D>(part, err))
+        }
+
+        let str = String::deserialize(deserializer)?;
+
+        let mut parts = str.split('.');
+        let variant = parts.next().unwrap();
+
+        let requirement = match variant.parse() {
+            Ok(RequirementDiscriminants::Ring) => Requirement::Ring,
+            Ok(RequirementDiscriminants::Charm) => Requirement::Charm,
+            Ok(RequirementDiscriminants::Swords) => {
+                let amount = extra_part::<_, D>(&mut parts, &str)?;
+                Requirement::Swords(amount)
+            }
+            Ok(RequirementDiscriminants::Gems) => {
+                let amount = extra_part::<_, D>(&mut parts, &str)?;
+                Requirement::Gems(amount)
+            }
+            Ok(RequirementDiscriminants::Id) | Err(_) => {
+                let id = str.parse().map_err(|err| parse_err::<_, D>(&str, err))?;
+                Requirement::Id(id)
+            }
+        };
+
+        Ok(requirement)
+    }
 }

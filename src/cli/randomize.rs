@@ -20,7 +20,7 @@ pub fn randomize(rom: PathBuf) {
         if let (Some(mut logic), Some(maps)) = (logic, rom.maps.take()) {
             let (mut maps, mut other) = maps
                 .into_iter()
-                .partition::<Vec<_>, _>(|map| (42..=42).contains(&map.identifier));
+                .partition::<Vec<_>, _>(|map| (42..=45).contains(&map.identifier));
 
             logic.purge_doors(&maps);
 
