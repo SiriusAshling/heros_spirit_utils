@@ -16,7 +16,10 @@ mod saves;
 use std::error::Error;
 
 use clap::Parser;
-use cli::{export_all, export_rom, import_all, import_rom, import_saves, randomize, Action, Cli};
+use cli::{
+    draw_logic, export_all, export_rom, import_all, import_rom, import_saves, randomize, Action,
+    Cli,
+};
 use helpers::OptionExtension;
 use saves::Saves;
 
@@ -29,6 +32,7 @@ fn main() -> Result<()> {
 
     match action {
         Action::Randomize { args } => randomize(args.rom.unwrap_or_prompt()?),
+        Action::DrawLogic { args } => draw_logic(args.rom.unwrap_or_prompt()?),
         Action::Export { args } => export_all(args.rom.unwrap_or_prompt()?),
         Action::Import { args } => import_all(args.rom.unwrap_or_prompt()?),
         Action::ExportSaves => {

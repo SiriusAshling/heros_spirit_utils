@@ -24,7 +24,7 @@ use super::{id::Id, pool::Pool};
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Logic {
-    areas: HashMap<String, Area>,
+    pub areas: HashMap<String, Area>,
 }
 
 impl Logic {
@@ -170,17 +170,17 @@ impl<'logic> Reach<'logic> {
 
 #[derive(Default, Deserialize)]
 #[serde(default, deny_unknown_fields)]
-struct Area {
-    items: HashMap<Id, Requirements>,
-    paths: HashMap<String, Requirements>,
-    transfers: Vec<Id>,
+pub struct Area {
+    pub items: HashMap<Id, Requirements>,
+    pub paths: HashMap<String, Requirements>,
+    pub transfers: Vec<Id>,
 }
 
 type Requirements = Vec<Vec<Requirement>>;
 
 #[derive(EnumDiscriminants)]
 #[strum_discriminants(derive(VariantArray, EnumString))]
-enum Requirement {
+pub enum Requirement {
     Ring,
     Charm,
     Swords(u8),

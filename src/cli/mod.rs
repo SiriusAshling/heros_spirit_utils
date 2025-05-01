@@ -4,7 +4,7 @@ mod randomize;
 
 pub use export::{export_all, export_rom};
 pub use import::{import_all, import_rom, import_saves};
-pub use randomize::randomize;
+pub use randomize::{draw_logic, randomize};
 
 use std::fmt::{self, Display};
 use std::fs::DirEntry;
@@ -31,11 +31,18 @@ pub struct Cli {
 #[derive(Subcommand, EnumDiscriminants)]
 #[strum_discriminants(derive(VariantArray, Display), strum(serialize_all = "kebab-case"))]
 pub enum Action {
-    /// Randomized transfer destinations and item locations
+    /// Randomize transfer destinations and item locations
     ///
     /// Roms are looked for in a "Roms/" subfolder.
     /// Additionally the file "rando/logic.json" is required.
     Randomize {
+        #[command(flatten)]
+        args: RomArgs,
+    },
+    /// Visualize the contents of "rando/logic.json"
+    ///
+    /// Roms are looked for in a "Roms/" subfolder.
+    DrawLogic {
         #[command(flatten)]
         args: RomArgs,
     },
@@ -80,6 +87,9 @@ impl FromPrompt for Action {
 
         let action = match action {
             ActionDiscriminants::Randomize => Action::Randomize {
+                args: Default::default(),
+            },
+            ActionDiscriminants::DrawLogic => Action::DrawLogic {
                 args: Default::default(),
             },
             ActionDiscriminants::Export => Action::Export {

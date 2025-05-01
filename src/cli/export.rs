@@ -33,16 +33,22 @@ pub fn export_rom(rom: PathBuf) -> Option<Rom> {
 }
 
 impl Rom {
-    pub fn export(&self, reader: &mut RomReader) {
+    pub fn draw_data(&self) -> Option<DrawData> {
         if let (Some(tile_data), Some(map_colors), Some(map_meta)) =
             (&self.tile_data, &self.map_colors, &self.map_meta)
         {
-            let data = DrawData {
+            Some(DrawData {
                 tile_data,
                 map_colors,
                 map_meta,
-            };
+            })
+        } else {
+            None
+        }
+    }
 
+    pub fn export(&self, reader: &mut RomReader) {
+        if let Some(data) = self.draw_data() {
             export_tilesets(&data).feedback("Export graphics");
 
             if let Some(maps) = &self.maps {
@@ -82,15 +88,7 @@ impl Rom {
         if let Some(maps) = &self.maps {
             export_stats(maps).feedback("Gather stats");
 
-            if let (Some(tile_data), Some(map_colors), Some(map_meta)) =
-                (&self.tile_data, &self.map_colors, &self.map_meta)
-            {
-                let data = DrawData {
-                    tile_data,
-                    map_colors,
-                    map_meta,
-                };
-
+            if let Some(data) = self.draw_data() {
                 export_maps("rom_files/Maps", maps, &data).feedback("Export maps");
 
                 let maps = maps
@@ -169,15 +167,31 @@ fn export_maps(path: impl AsRef<Path>, maps: &[Map], data: &DrawData) -> Result<
     Ok(())
 }
 
-fn export_map_image(identifier: u8, map: &RgbaImage) -> Result<()> {
-    let map_name = map::map_name(identifier);
+pub(super) fn save_map_image<P: AsRef<Path>>(
+    folder: P,
+    identifier: u8,
+    map: &RgbaImage,
+) -> Result<()> {
+    fn save_map_image(folder: &Path, identifier: u8, map: &RgbaImage) -> Result<()> {
+        let map_name = map::map_name(identifier);
 
-    export_image(format!("{identifier}_{map_name}.png"), map)
+        save_image(folder, format!("{identifier}_{map_name}.png"), map)
+    }
+
+    save_map_image(folder.as_ref(), identifier, map)
 }
 
-fn export_image<P: AsRef<Path>>(name: P, map: &RgbaImage) -> Result<()> {
-    fn export_image(name: &Path, map: &RgbaImage) -> Result<()> {
-        let mut path = PathBuf::from("rom_files/Maps/images");
+fn export_map_image(identifier: u8, map: &RgbaImage) -> Result<()> {
+    save_map_image("rom_files/Maps/images", identifier, map)
+}
+
+pub(super) fn save_image<P1: AsRef<Path>, P2: AsRef<Path>>(
+    folder: P1,
+    name: P2,
+    map: &RgbaImage,
+) -> Result<()> {
+    fn save_image(folder: &Path, name: &Path, map: &RgbaImage) -> Result<()> {
+        let mut path = folder.to_path_buf();
         helpers::create_dir_all(&path)?;
         path.push(name);
 
@@ -186,7 +200,11 @@ fn export_image<P: AsRef<Path>>(name: P, map: &RgbaImage) -> Result<()> {
         Ok(())
     }
 
-    export_image(name.as_ref(), map)
+    save_image(folder.as_ref(), name.as_ref(), map)
+}
+
+fn export_image<P: AsRef<Path>>(name: P, map: &RgbaImage) -> Result<()> {
+    save_image("rom_files/Maps/images", name, map)
 }
 
 fn export_stats(maps: &[Map]) -> Result<()> {

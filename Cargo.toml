@@ -19,3 +19,6 @@ color-hex = "0.2.0"
 indexmap = { version = "2.9.0", features = ["serde"] }
 rand = { version = "0.9.1", default-features = false, features = ["std", "thread_rng"] }
 rand_pcg = "0.9.0"
+geo = { version = "0.30.0", default-features = false }
+imageproc = { version = "0.25.0", default-features = false }
+lyon = "1.0.1"

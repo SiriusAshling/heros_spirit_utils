@@ -4,9 +4,11 @@ mod logic;
 mod pool;
 mod seed;
 mod transfers;
+mod visualize;
 
 pub use logic::Logic;
 pub use seed::Seed;
+pub use visualize::Visualizer;
 
 use generator::Generator;
 use rand_pcg::Pcg64Mcg;
