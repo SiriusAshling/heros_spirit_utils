@@ -170,7 +170,7 @@ pub enum Things {
     UnderworldKeyhole,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SpriteData {
     pub kind: u8,
     pub extra_bytes: Vec<u8>,

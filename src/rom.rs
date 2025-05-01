@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, Read, Write};
 use std::path::PathBuf;
@@ -93,11 +94,12 @@ impl RomWriter {
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct Rom {
     pub tile_data: Option<TileData>,
     pub maps: Option<Vec<Map>>,
     pub map_colors: Option<MapColors>,
-    pub map_meta: Option<std::collections::HashMap<usize, MapMeta>>,
+    pub map_meta: Option<HashMap<usize, MapMeta>>,
 }
 
 impl Rom {

@@ -220,14 +220,6 @@ impl<'de> Deserialize<'de> for Requirement {
             )
         }
 
-        fn parse_err<'de, E, D>(unexp: &str, err: E) -> D::Error
-        where
-            E: Display,
-            D: Deserializer<'de>,
-        {
-            Error::invalid_value(Unexpected::Str(unexp), &err.to_string().as_str())
-        }
-
         fn extra_part<'de, T, D>(parts: &mut Split<char>, unexp: &str) -> StdResult<T, D::Error>
         where
             T: FromStr,
@@ -235,7 +227,8 @@ impl<'de> Deserialize<'de> for Requirement {
             D: Deserializer<'de>,
         {
             let part = parts.next().ok_or_else(|| invalid_variant::<D>(unexp))?;
-            part.parse().map_err(|err| parse_err::<_, D>(part, err))
+            part.parse()
+                .map_err(|err| Error::custom(format!("invalid part \"{part}\": {err}")))
         }
 
         let str = String::deserialize(deserializer)?;
@@ -255,11 +248,96 @@ impl<'de> Deserialize<'de> for Requirement {
                 Requirement::Gems(amount)
             }
             Ok(RequirementDiscriminants::Id) | Err(_) => {
-                let id = str.parse().map_err(|err| parse_err::<_, D>(&str, err))?;
+                let id = str.parse().map_err(|_| invalid_variant::<D>(&str))?;
                 Requirement::Id(id)
             }
         };
 
         Ok(requirement)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn validate_logic() {
+        use crate::rom::{Rom, RomReader};
+
+        let logic = Logic::parse().unwrap();
+
+        let mut valid = true;
+
+        let mut reader = RomReader::open("Roms/main.hsrom".into()).unwrap();
+        let rom = Rom::parse(&mut reader);
+
+        for (name, area) in &logic.areas {
+            if area.items.is_empty() && area.transfers.is_empty() {
+                eprintln!("{name} has no items or transfers");
+                valid = false;
+            }
+
+            for path in area.paths.keys() {
+                if !logic.get_area(path).paths.contains_key(name) {
+                    eprintln!("{name} -> {path} exists but {path} -> {name} doesn't");
+                    valid = false;
+                }
+            }
+        }
+
+        for map in rom.maps.unwrap() {
+            if !(42..=45).contains(&map.identifier) {
+                continue;
+            }
+
+            for (x, y, sprite) in map.sprites_with_positions() {
+                let id = Id {
+                    map: map.identifier,
+                    x,
+                    y,
+                };
+
+                if should_not_map(id) {
+                    continue;
+                }
+
+                let mapped = match sprite.kind.into() {
+                    Sprite::Collectible(_) | Sprite::Gear(_) | Sprite::Door(_) => logic
+                        .areas
+                        .values()
+                        .flat_map(|area| area.items.keys())
+                        .contains(&id),
+                    Sprite::Things(Things::Transfer) => logic
+                        .areas
+                        .values()
+                        .flat_map(|area| &area.transfers)
+                        .contains(&id),
+                    _ => true,
+                };
+
+                if !mapped {
+                    eprintln!("{id} not mapped in logic");
+                    valid = false;
+                }
+            }
+        }
+
+        assert!(valid);
+    }
+
+    fn should_not_map(id: Id) -> bool {
+        matches!(
+            id,
+            Id {
+                map: 43,
+                x: 31,
+                y: 1
+            } | Id {
+                map: 43,
+                x: 32,
+                y: 1
+            }
+        )
     }
 }

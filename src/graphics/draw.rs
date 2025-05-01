@@ -124,7 +124,8 @@ impl DrawData<'_> {
         // };
 
         // TODO this underflows sometimes
-        if let Some(tile16) = self.tile_data.map_tile16_list.get(tile - 1) {
+        let index = tile.overflowing_sub(1).0;
+        if let Some(tile16) = self.tile_data.map_tile16_list.get(index) {
             let pixel_x = x * 16;
             let pixel_y = y * 16;
 

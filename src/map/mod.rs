@@ -9,6 +9,7 @@ pub use sprite::{Collectible, Door, Enemy, Gear, Sprite, SpriteData, Things};
 use crate::rom::{self, RomReader};
 use crate::Result;
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct Map {
     pub identifier: u8,
     pub tiles: Vec<Vec<u8>>,

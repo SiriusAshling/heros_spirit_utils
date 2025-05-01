@@ -5,7 +5,7 @@ use serde::Deserialize;
 
 use crate::{rom::RomReader, Result};
 
-#[derive(Deserialize)]
+#[derive(Debug, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct MapColors {
     pub map_colors: IndexMap<String, IndexMap<String, [u8; 4]>>,
@@ -23,7 +23,7 @@ impl MapColors {
     }
 }
 
-#[derive(Default, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Default, Deserialize)]
 #[serde(rename_all = "PascalCase", default)]
 pub struct MapMeta {
     pub is_bloodmoon_allowed: bool,

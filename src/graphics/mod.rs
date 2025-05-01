@@ -11,6 +11,7 @@ use crate::data::{
 use crate::rom::{self, RomReader};
 use crate::Result;
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct TileData {
     pub tile8_list: Vec<Tile8Data>,
     pub map_tile16_list: Vec<Tile16>,
@@ -35,7 +36,7 @@ impl TileData {
     }
 }
 
-#[derive(Default)]
+#[derive(Debug, PartialEq, Eq, Default)]
 pub struct Tile8 {
     pub index: u16,
     pub flip_x: bool,
