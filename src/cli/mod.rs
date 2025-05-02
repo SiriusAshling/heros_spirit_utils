@@ -114,9 +114,7 @@ impl FromPrompt for Action {
 
 #[derive(Args, Default)]
 pub struct RomArgs {
-    /// Name of the rom to operate on
-    ///
-    /// It will be searched at "Roms/<rom>.hsrom"
+    /// Path to the rom to operate on
     #[arg(short, long)]
     pub rom: Option<PathBuf>,
 }
