@@ -55,6 +55,22 @@ pub enum Door {
     Underworld,
 }
 
+impl Door {
+    pub fn key(self) -> Sprite {
+        match self {
+            Door::Gold => Sprite::Collectible(Collectible::GoldKey),
+            Door::Silver => Sprite::Collectible(Collectible::SilverKey),
+            Door::Red => Sprite::Collectible(Collectible::RedKey),
+            Door::Green => Sprite::Collectible(Collectible::GreenKey),
+            Door::Blue => Sprite::Collectible(Collectible::BlueKey),
+            Door::Boulder => Sprite::Gear(Gear::Hammer),
+            Door::Teal => Sprite::Collectible(Collectible::TealKey),
+            Door::Purple => Sprite::Collectible(Collectible::PurpleKey),
+            Door::Underworld => Sprite::Collectible(Collectible::UnderworldKey),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Enemy {
     Guard = 0,
@@ -440,6 +456,15 @@ impl From<Sprite> for u8 {
             Sprite::Door(Door::Purple) => 249,
             Sprite::Collectible(Collectible::PurpleKey) => 250,
             Sprite::Other(id) => id,
+        }
+    }
+}
+
+impl From<Sprite> for SpriteData {
+    fn from(value: Sprite) -> Self {
+        SpriteData {
+            kind: value.into(),
+            extra_bytes: vec![],
         }
     }
 }

@@ -1,19 +1,17 @@
-use std::collections::HashMap;
-
 use indexmap::IndexSet;
+use rand::seq::SliceRandom;
 use rand_pcg::Pcg64Mcg;
 
 use crate::{
     helpers::RemoveRandom,
-    map::{Door, Gear, Map, Sprite, Things},
+    map::{Collectible, Door, Enemy, Map, Sprite},
 };
 
 use super::{
     id::Id,
-    logic::{Logic, Reach},
+    logic::{Logic, Reach, RequirementMap},
     pool::Pool,
     seed::Seed,
-    transfers::generate_transfers,
 };
 
 pub struct Generator<'logic> {
@@ -26,15 +24,14 @@ pub struct Generator<'logic> {
 
 impl<'logic> Generator<'logic> {
     pub fn new(maps: &[Map], logic: &'logic Logic, mut rng: Pcg64Mcg) -> Self {
-        let mut builder = GeneratorBuilder::new();
+        let mut seed = Seed::default();
+        let mut requirement_map = RequirementMap::new(logic);
 
-        for map in maps {
-            builder.add_transfer_targets(map);
-            builder.add_door_requirements(map);
-        }
+        let logic_transfers = seed.generate_transfers(maps, logic, &mut rng);
+        seed.blind_shuffle::<Door>(maps, &mut requirement_map, &mut rng);
+        seed.blind_shuffle::<Enemy>(maps, &mut requirement_map, &mut rng);
 
-        let (logic_transfers, map_transfers) = generate_transfers(logic, &mut rng);
-        let reach = Reach::new(logic, logic_transfers, builder.door_requirements);
+        let reach = Reach::new(logic, logic_transfers, requirement_map);
         let pool = Pool::new(logic, maps);
         let needs_placement = reach.reach(&pool);
 
@@ -43,13 +40,13 @@ impl<'logic> Generator<'logic> {
             reach,
             pool,
             needs_placement,
-            seed: Seed::new(map_transfers),
+            seed,
         };
 
         for item in logic.items() {
-            if !generator.needs_placement.contains(item) {
+            if !generator.needs_placement.contains(&item) {
                 eprintln!("item {item} is unreachable");
-                generator.place_unreachable(*item);
+                generator.place_unreachable(item);
             }
         }
 
@@ -58,7 +55,7 @@ impl<'logic> Generator<'logic> {
 
     fn place_unreachable(&mut self, location: Id) {
         let sprite = self.pool.choose_remove(&mut self.rng);
-        self.seed.placements.push((location, sprite));
+        self.seed.placements.push((location, sprite.into()));
     }
 
     pub fn finished(&self) -> bool {
@@ -103,56 +100,105 @@ impl<'logic> Generator<'logic> {
 
     fn commit_placement(&mut self, location: Id, sprite: Sprite) {
         self.needs_placement.swap_remove(&location);
-        self.seed.placements.push((location, sprite));
+        self.seed.placements.push((location, sprite.into()));
     }
 }
 
-#[derive(Default)]
-struct GeneratorBuilder {
-    transfer_targets: HashMap<Id, Id>,
-    door_requirements: HashMap<Id, Option<Sprite>>,
+trait BlindShuffle: Sized {
+    const EXPECTED: &str;
+
+    fn match_sprite(sprite: Sprite) -> Option<Self>;
+
+    fn iter(maps: &[Map]) -> impl Iterator<Item = Id> {
+        maps.iter().flat_map(|map| {
+            map.sprites_with_positions()
+                .filter(|(_, _, sprite)| Self::match_sprite(sprite.kind.into()).is_some())
+                .map(|(x, y, _)| Id::new(map.identifier, x, y))
+        })
+    }
+
+    fn map(id: Id, maps: &[Map]) -> Self {
+        let sprite = id.expect_sprite(maps).kind.into();
+        Self::match_sprite(sprite)
+            .unwrap_or_else(|| panic!("unexpected {sprite:?} as {} {id}", Self::EXPECTED))
+    }
+
+    fn requirement(&self) -> Vec<Vec<Sprite>>;
+
+    fn sprite(self) -> Sprite;
 }
 
-impl GeneratorBuilder {
-    fn new() -> Self {
-        Self::default()
-    }
+impl BlindShuffle for Door {
+    const EXPECTED: &str = "door";
 
-    // TODO finish implementing
-    fn add_transfer_targets(&mut self, map: &Map) {
-        let map_id = map.identifier;
-
-        for (x, y, sprite) in map.sprites_with_positions() {
-            if let Sprite::Things(Things::Transfer) = sprite.kind.into() {
-                let transfer = Id { map: map_id, x, y };
-                let target = Id {
-                    map: sprite.extra_bytes[0],
-                    x: sprite.extra_bytes[1] as usize,
-                    y: sprite.extra_bytes[2] as usize,
-                };
-                self.transfer_targets.insert(transfer, target);
+    fn match_sprite(sprite: Sprite) -> Option<Self> {
+        match sprite {
+            Sprite::Door(door @ Door::Gold | door @ Door::Silver | door @ Door::Boulder) => {
+                Some(door)
             }
+            _ => None,
         }
     }
 
-    fn add_door_requirements(&mut self, map: &Map) {
-        let map_id = map.identifier;
+    fn requirement(&self) -> Vec<Vec<Sprite>> {
+        vec![vec![self.key()]]
+    }
 
-        for (x, y, sprite) in map.sprites_with_positions() {
-            match sprite.kind.into() {
-                Sprite::Door(Door::Boulder) | Sprite::Things(Things::NGPBoulder) => {
-                    self.add_door_requirement(x, y, map_id, Some(Sprite::Gear(Gear::Hammer)));
-                }
-                Sprite::Collectible(_) | Sprite::Door(Door::Gold | Door::Silver) => {
-                    self.add_door_requirement(x, y, map_id, None);
-                }
-                _ => {}
-            }
+    fn sprite(self) -> Sprite {
+        Sprite::Door(self)
+    }
+}
+
+impl BlindShuffle for Enemy {
+    const EXPECTED: &str = "enemy";
+
+    fn match_sprite(sprite: Sprite) -> Option<Self> {
+        match sprite {
+            Sprite::Enemy(enemy) => Some(enemy),
+            _ => None,
         }
     }
 
-    fn add_door_requirement(&mut self, x: usize, y: usize, map: u8, sprite: Option<Sprite>) {
-        let id = Id { map, x, y };
-        self.door_requirements.insert(id, sprite);
+    fn requirement(&self) -> Vec<Vec<Sprite>> {
+        match self {
+            Self::FairyG | Self::FairyB => vec![vec![]],
+            _ => vec![
+                vec![Sprite::Collectible(Collectible::Sword); self.strength() as usize],
+                vec![Sprite::Collectible(Collectible::Gem); 99],
+            ],
+        }
+    }
+
+    fn sprite(self) -> Sprite {
+        Sprite::Enemy(self)
+    }
+}
+
+impl Seed {
+    fn blind_shuffle<T>(
+        &mut self,
+        maps: &[Map],
+        requirement_map: &mut RequirementMap,
+        rng: &mut Pcg64Mcg,
+    ) where
+        T: BlindShuffle,
+    {
+        let ids = T::iter(maps).collect::<Vec<_>>();
+        let mut id_kinds = ids.iter().map(|id| T::map(*id, maps)).collect::<Vec<_>>();
+
+        requirement_map.extend(
+            ids.iter()
+                .zip(&id_kinds)
+                .map(|(id, kind)| (*id, kind.requirement())),
+        );
+
+        id_kinds.shuffle(rng);
+
+        self.extend(
+            ids.into_iter()
+                .zip(id_kinds)
+                .filter(|(id, _)| !id.is_excluded())
+                .map(|(id, kind)| (id, kind.sprite().into())),
+        );
     }
 }

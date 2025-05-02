@@ -20,26 +20,64 @@ pub struct Id {
 }
 
 impl Id {
-    pub fn sprite(self, maps: &[Map]) -> &Option<SpriteData> {
-        &maps
-            .iter()
+    pub const fn new(map: u8, x: usize, y: usize) -> Self {
+        Self { map, x, y }
+    }
+
+    pub const fn is_excluded(self) -> bool {
+        const INNER_CASTLE_GUARD_LEFT: Id = Id::new(43, 45, 56);
+        const INNER_CASTLE_GUARD_RIGHT: Id = Id::new(43, 46, 56);
+        const FINAL_TRANSFER_LEFT: Id = Id::new(43, 31, 1);
+        const FINAL_TRANSFER_RIGHT: Id = Id::new(43, 32, 1);
+        const FINAL_GUARD_LEFT: Id = Id::new(43, 31, 3);
+        const FINAL_GUARD_RIGHT: Id = Id::new(43, 32, 3);
+
+        matches!(
+            self,
+            INNER_CASTLE_GUARD_LEFT
+                | INNER_CASTLE_GUARD_RIGHT
+                | FINAL_TRANSFER_LEFT
+                | FINAL_TRANSFER_RIGHT
+                | FINAL_GUARD_LEFT
+                | FINAL_GUARD_RIGHT
+        )
+    }
+
+    pub fn expect_map(self, maps: &[Map]) -> &Map {
+        maps.iter()
             .find(|m| m.identifier == self.map)
-            .unwrap_or_else(|| panic!("unknown map identifier {}", self.map))
-            .sprites[self.y][self.x]
+            .unwrap_or_else(|| self.unknown_map_identifier())
+    }
+
+    pub fn expect_map_mut(self, maps: &mut [Map]) -> &mut Map {
+        maps.iter_mut()
+            .find(|m| m.identifier == self.map)
+            .unwrap_or_else(|| self.unknown_map_identifier())
+    }
+
+    pub fn sprite(self, maps: &[Map]) -> Option<&SpriteData> {
+        self.expect_map(maps).sprite(self.x, self.y)
     }
 
     pub fn expect_sprite(self, maps: &[Map]) -> &SpriteData {
-        self.sprite(maps)
-            .as_ref()
-            .unwrap_or_else(|| panic!("failed to match item {self} to map"))
+        self.sprite(maps).unwrap_or_else(|| self.failed_to_match())
     }
 
-    pub fn sprite_mut(self, maps: &mut [Map]) -> &mut Option<SpriteData> {
-        &mut maps
-            .iter_mut()
-            .find(|m| m.identifier == self.map)
-            .unwrap_or_else(|| panic!("unknown map identifier {}", self.map))
-            .sprites[self.y][self.x]
+    pub fn sprite_mut(self, maps: &mut [Map]) -> Option<&mut SpriteData> {
+        self.expect_map_mut(maps).sprite_mut(self.x, self.y)
+    }
+
+    pub fn expect_sprite_mut(self, maps: &mut [Map]) -> &mut SpriteData {
+        self.sprite_mut(maps)
+            .unwrap_or_else(|| self.failed_to_match())
+    }
+
+    fn unknown_map_identifier(self) -> ! {
+        panic!("unknown map identifier {}", self.map)
+    }
+
+    fn failed_to_match(self) -> ! {
+        panic!("failed to match {self} to map")
     }
 }
 

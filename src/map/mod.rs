@@ -94,6 +94,20 @@ impl Map {
                 .filter_map(move |(x, sprite)| sprite.as_ref().map(|sprite| (x, y, sprite)))
         })
     }
+
+    pub fn sprite(&self, x: usize, y: usize) -> Option<&SpriteData> {
+        self.sprites
+            .get(y)
+            .and_then(|row| row.get(x))
+            .and_then(Option::as_ref)
+    }
+
+    pub fn sprite_mut(&mut self, x: usize, y: usize) -> Option<&mut SpriteData> {
+        self.sprites
+            .get_mut(y)
+            .and_then(|row| row.get_mut(x))
+            .and_then(Option::as_mut)
+    }
 }
 
 pub fn map_name(map: u8) -> &'static str {

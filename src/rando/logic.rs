@@ -1,8 +1,7 @@
 use std::{
     collections::{HashMap, HashSet},
-    fmt::Display,
+    ops::{Deref, DerefMut},
     result::Result as StdResult,
-    str::{FromStr, Split},
 };
 
 use indexmap::IndexSet;
@@ -15,7 +14,7 @@ use strum::{EnumDiscriminants, EnumString, VariantArray};
 
 use crate::{
     helpers::file_open,
-    map::{Collectible, Door, Gear, Map, Sprite, Things},
+    map::{Door, Gear, Map, Sprite},
     Result,
 };
 
@@ -40,16 +39,18 @@ impl Logic {
                 let sprite = item.expect_sprite(maps);
                 match sprite.kind.into() {
                     Sprite::Collectible(_) | Sprite::Gear(_) => true,
-                    Sprite::Door(Door::Gold | Door::Silver | Door::Boulder)
-                    | Sprite::Things(Things::NGPBoulder) => false,
+                    Sprite::Door(Door::Gold | Door::Silver | Door::Boulder) => false,
                     other => panic!("unexpected {other:?} as item {item}"),
                 }
             });
         }
     }
 
-    pub fn items(&self) -> impl Iterator<Item = &Id> {
-        self.areas.values().flat_map(|area| area.items.keys())
+    pub fn items(&self) -> impl Iterator<Item = Id> + use<'_> {
+        self.areas
+            .values()
+            .flat_map(|area| area.items.keys())
+            .copied()
     }
 
     pub fn transfer_groups(&self) -> Vec<Vec<(&String, Id)>> {
@@ -89,19 +90,19 @@ impl Logic {
 pub struct Reach<'logic> {
     logic: &'logic Logic,
     transfers: HashMap<Id, &'logic String>,
-    door_requirements: HashMap<Id, Option<Sprite>>,
+    requirement_map: RequirementMap,
 }
 
 impl<'logic> Reach<'logic> {
     pub fn new(
         logic: &'logic Logic,
         transfers: HashMap<Id, &'logic String>,
-        door_requirements: HashMap<Id, Option<Sprite>>,
+        requirement_map: RequirementMap,
     ) -> Self {
         Self {
             logic,
             transfers,
-            door_requirements,
+            requirement_map,
         }
     }
 
@@ -141,30 +142,51 @@ impl<'logic> Reach<'logic> {
     fn is_met(&self, requirements: &Requirements, pool: &Pool) -> bool {
         requirements.iter().any(|requirements| {
             requirements.iter().all(|requirement| {
-                let items = self.required_items(requirement);
-                pool.contains_all(&items)
+                let items = self.requirement_map.required_items(requirement);
+                items.iter().any(|items| pool.contains_all(items))
             })
         })
     }
+}
 
-    fn required_items(&self, requirement: &Requirement) -> Vec<Sprite> {
-        match requirement {
-            Requirement::Ring => vec![Sprite::Gear(Gear::WindRing)],
-            Requirement::Charm => vec![Sprite::Gear(Gear::LavaCharm)],
-            Requirement::Swords(amount) => {
-                vec![Sprite::Collectible(Collectible::Sword); *amount as usize]
-            }
-            Requirement::Gems(amount) => {
-                vec![Sprite::Collectible(Collectible::Gem); *amount as usize]
-            }
-            Requirement::Id(id) => self
-                .door_requirements
-                .get(id)
-                .unwrap_or_else(|| panic!("Unknown requirement {id}"))
-                .into_iter()
-                .copied()
-                .collect(),
+pub struct RequirementMap {
+    ring_requirement: Vec<Vec<Sprite>>,
+    charm_requirement: Vec<Vec<Sprite>>,
+    id_requirements: HashMap<Id, Vec<Vec<Sprite>>>,
+}
+
+impl RequirementMap {
+    pub fn new(logic: &Logic) -> Self {
+        Self {
+            ring_requirement: vec![vec![Sprite::Gear(Gear::WindRing)]],
+            charm_requirement: vec![vec![Sprite::Gear(Gear::LavaCharm)]],
+            id_requirements: logic.items().map(|id| (id, vec![vec![]])).collect(),
         }
+    }
+
+    fn required_items(&self, requirement: &Requirement) -> &Vec<Vec<Sprite>> {
+        match requirement {
+            Requirement::Ring => &self.ring_requirement,
+            Requirement::Charm => &self.charm_requirement,
+            Requirement::Id(id) => self
+                .id_requirements
+                .get(id)
+                .unwrap_or_else(|| panic!("Unknown requirement {id}")),
+        }
+    }
+}
+
+impl Deref for RequirementMap {
+    type Target = HashMap<Id, Vec<Vec<Sprite>>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.id_requirements
+    }
+}
+
+impl DerefMut for RequirementMap {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.id_requirements
     }
 }
 
@@ -183,8 +205,6 @@ type Requirements = Vec<Vec<Requirement>>;
 pub enum Requirement {
     Ring,
     Charm,
-    Swords(u8),
-    Gems(u8),
     Id(Id),
 }
 
@@ -193,8 +213,6 @@ impl RequirementDiscriminants {
         match self {
             Self::Ring => "Ring",
             Self::Charm => "Charm",
-            Self::Swords => "Swords.<amount>",
-            Self::Gems => "Gems.<amount>",
             Self::Id => "<map>.<x>.<y>",
         }
     }
@@ -220,17 +238,6 @@ impl<'de> Deserialize<'de> for Requirement {
             )
         }
 
-        fn extra_part<'de, T, D>(parts: &mut Split<char>, unexp: &str) -> StdResult<T, D::Error>
-        where
-            T: FromStr,
-            T::Err: Display,
-            D: Deserializer<'de>,
-        {
-            let part = parts.next().ok_or_else(|| invalid_variant::<D>(unexp))?;
-            part.parse()
-                .map_err(|err| Error::custom(format!("invalid part \"{part}\": {err}")))
-        }
-
         let str = String::deserialize(deserializer)?;
 
         let mut parts = str.split('.');
@@ -239,14 +246,6 @@ impl<'de> Deserialize<'de> for Requirement {
         let requirement = match variant.parse() {
             Ok(RequirementDiscriminants::Ring) => Requirement::Ring,
             Ok(RequirementDiscriminants::Charm) => Requirement::Charm,
-            Ok(RequirementDiscriminants::Swords) => {
-                let amount = extra_part::<_, D>(&mut parts, &str)?;
-                Requirement::Swords(amount)
-            }
-            Ok(RequirementDiscriminants::Gems) => {
-                let amount = extra_part::<_, D>(&mut parts, &str)?;
-                Requirement::Gems(amount)
-            }
             Ok(RequirementDiscriminants::Id) | Err(_) => {
                 let id = str.parse().map_err(|_| invalid_variant::<D>(&str))?;
                 Requirement::Id(id)
@@ -259,13 +258,17 @@ impl<'de> Deserialize<'de> for Requirement {
 
 #[cfg(test)]
 mod tests {
+    use rand_pcg::Pcg64Mcg;
+
+    use crate::{map::Things, rando::generator::Generator};
+
     use super::*;
 
     #[test]
     fn validate_logic() {
         use crate::rom::{Rom, RomReader};
 
-        let logic = Logic::parse().unwrap();
+        let mut logic = Logic::parse().unwrap();
 
         let mut valid = true;
 
@@ -273,9 +276,20 @@ mod tests {
         let rom = Rom::parse(&mut reader);
 
         for (name, area) in &logic.areas {
-            if area.items.is_empty() && area.transfers.is_empty() {
-                eprintln!("{name} has no items or transfers");
-                valid = false;
+            let mut ids = area.items.keys().chain(&area.transfers);
+            match ids.next() {
+                None => {
+                    eprintln!("{name} has no items or transfers");
+                    valid = false;
+                }
+                Some(first) => {
+                    for id in ids {
+                        if id.map != first.map {
+                            eprintln!("{name} contains items or transfers in multiple maps: {first} and {id}");
+                            valid = false;
+                        }
+                    }
+                }
             }
 
             for path in area.paths.keys() {
@@ -286,19 +300,17 @@ mod tests {
             }
         }
 
-        for map in rom.maps.unwrap() {
+        let maps = rom.maps.unwrap();
+
+        for map in &maps {
             if !(42..=45).contains(&map.identifier) {
                 continue;
             }
 
             for (x, y, sprite) in map.sprites_with_positions() {
-                let id = Id {
-                    map: map.identifier,
-                    x,
-                    y,
-                };
+                let id = Id::new(map.identifier, x, y);
 
-                if should_not_map(id) {
+                if id.is_excluded() {
                     continue;
                 }
 
@@ -323,21 +335,10 @@ mod tests {
             }
         }
 
-        assert!(valid);
-    }
+        Generator::new(&maps, &logic, Pcg64Mcg::new(0));
 
-    fn should_not_map(id: Id) -> bool {
-        matches!(
-            id,
-            Id {
-                map: 43,
-                x: 31,
-                y: 1
-            } | Id {
-                map: 43,
-                x: 32,
-                y: 1
-            }
-        )
+        logic.purge_doors(&maps);
+
+        assert!(valid);
     }
 }

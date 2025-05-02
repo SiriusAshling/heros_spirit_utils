@@ -1,41 +1,32 @@
-use crate::{
-    map::{Map, Sprite, SpriteData, Things},
-    saves::Direction,
-};
+use std::ops::{Deref, DerefMut};
+
+use crate::map::{Map, SpriteData};
 
 use super::id::Id;
 
+#[derive(Default)]
 pub struct Seed {
-    pub placements: Vec<(Id, Sprite)>,
-    pub map_transfers: Vec<(Id, Id)>,
+    pub placements: Vec<(Id, SpriteData)>,
 }
 
 impl Seed {
-    pub fn new(map_transfers: Vec<(Id, Id)>) -> Self {
-        Self {
-            placements: vec![],
-            map_transfers,
-        }
-    }
-
     pub fn apply(self, maps: &mut [Map]) {
         for (location, sprite) in self.placements {
-            *location.sprite_mut(maps) = Some(SpriteData {
-                kind: sprite.into(),
-                extra_bytes: vec![],
-            });
+            *location.expect_sprite_mut(maps) = sprite;
         }
+    }
+}
 
-        for (source, target) in self.map_transfers {
-            *source.sprite_mut(maps) = Some(SpriteData {
-                kind: Sprite::Things(Things::Transfer).into(),
-                extra_bytes: vec![
-                    target.map,
-                    target.x as u8,
-                    target.y as u8,
-                    Direction::Down as u8,
-                ],
-            });
-        }
+impl Deref for Seed {
+    type Target = Vec<(Id, SpriteData)>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.placements
+    }
+}
+
+impl DerefMut for Seed {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.placements
     }
 }
