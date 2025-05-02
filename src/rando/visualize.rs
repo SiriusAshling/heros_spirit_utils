@@ -19,6 +19,7 @@ use lyon::{
 
 use super::{logic::Area, Logic};
 
+#[allow(clippy::type_complexity)]
 pub struct Visualizer<'logic> {
     area_shapes: HashMap<u8, Vec<(&'logic Area, Polygon<f32>, geo::Point<f32>)>>,
     area_centroids: HashMap<&'logic String, geo::Point<f32>>,
@@ -128,7 +129,7 @@ fn visualize_area(outline: &Polygon<f32>, image: &mut RgbaImage) {
                     interpolate,
                 );
 
-                current.clear()
+                current.clear();
             }
             _ => unreachable!(),
         }

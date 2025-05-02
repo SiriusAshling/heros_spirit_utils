@@ -1,8 +1,11 @@
 #![recursion_limit = "256"]
 #![allow(clippy::cast_sign_loss)]
+#![allow(clippy::cast_precision_loss)]
 #![allow(clippy::cast_possible_truncation)]
 #![allow(clippy::struct_field_names)]
+#![allow(clippy::struct_excessive_bools)]
 #![allow(clippy::match_same_arms)]
+#![allow(clippy::similar_names)]
 
 mod cli;
 mod data;

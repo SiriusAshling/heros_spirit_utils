@@ -44,12 +44,11 @@ impl Pool {
         while !self.is_empty() {
             let sprite = self.choose_remove(rng);
 
-            match sprite {
-                Sprite::Gear(_) => skipped.push(sprite),
-                _ => {
-                    self.append(&mut skipped);
-                    return sprite;
-                }
+            if let Sprite::Gear(_) = sprite {
+                skipped.push(sprite);
+            } else {
+                self.append(&mut skipped);
+                return sprite;
             }
         }
 

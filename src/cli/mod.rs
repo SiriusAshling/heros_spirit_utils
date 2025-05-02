@@ -87,24 +87,24 @@ impl FromPrompt for Action {
 
         let action = match action {
             ActionDiscriminants::Randomize => Action::Randomize {
-                args: Default::default(),
+                args: RomArgs::default(),
             },
             ActionDiscriminants::DrawLogic => Action::DrawLogic {
-                args: Default::default(),
+                args: RomArgs::default(),
             },
             ActionDiscriminants::Export => Action::Export {
-                args: Default::default(),
+                args: RomArgs::default(),
             },
             ActionDiscriminants::Import => Action::Import {
-                args: Default::default(),
+                args: RomArgs::default(),
             },
             ActionDiscriminants::ExportSaves => Action::ExportSaves,
             ActionDiscriminants::ImportSaves => Action::ImportSaves,
             ActionDiscriminants::ExportRom => Action::ExportRom {
-                args: Default::default(),
+                args: RomArgs::default(),
             },
             ActionDiscriminants::ImportRom => Action::ImportRom {
-                args: Default::default(),
+                args: RomArgs::default(),
             },
         };
 

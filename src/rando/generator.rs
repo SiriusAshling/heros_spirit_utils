@@ -133,9 +133,7 @@ impl BlindShuffle for Door {
 
     fn match_sprite(sprite: Sprite) -> Option<Self> {
         match sprite {
-            Sprite::Door(door @ Door::Gold | door @ Door::Silver | door @ Door::Boulder) => {
-                Some(door)
-            }
+            Sprite::Door(door @ (Door::Gold | Door::Silver | Door::Boulder)) => Some(door),
             _ => None,
         }
     }

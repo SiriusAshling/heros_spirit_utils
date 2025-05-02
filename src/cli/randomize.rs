@@ -77,5 +77,5 @@ pub fn draw_logic(rom: PathBuf) {
 
     let (name, merged) = &merge_maps(images)[1];
 
-    save_image("rando/visualizer", name, &merged).feedback(format!("Save {name} visualization"));
+    save_image("rando/visualizer", name, merged).feedback(format!("Save {name} visualization"));
 }
