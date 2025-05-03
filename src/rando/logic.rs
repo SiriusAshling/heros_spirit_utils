@@ -4,7 +4,7 @@ use std::{
     result::Result as StdResult,
 };
 
-use indexmap::IndexSet;
+use indexmap::{IndexMap, IndexSet};
 use itertools::Itertools;
 use serde::{
     de::{Error, Unexpected},
@@ -23,7 +23,7 @@ use super::{id::Id, pool::Pool};
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Logic {
-    pub areas: HashMap<String, Area>,
+    pub areas: IndexMap<String, Area>,
 }
 
 impl Logic {
@@ -54,7 +54,7 @@ impl Logic {
     }
 
     pub fn transfer_groups(&self) -> Vec<Vec<(&String, Id)>> {
-        let mut remaining = self.areas.keys().collect::<HashSet<_>>();
+        let mut remaining = self.areas.keys().collect::<IndexSet<_>>();
         let mut groups = vec![];
 
         while let Some(&key) = remaining.iter().next() {
@@ -65,7 +65,7 @@ impl Logic {
                 if !remaining.contains(path) {
                     continue;
                 }
-                remaining.remove(path);
+                remaining.swap_remove(path);
 
                 let area = self.get_area(path);
                 paths.extend(area.paths.keys());
@@ -193,8 +193,8 @@ impl DerefMut for RequirementMap {
 #[derive(Default, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Area {
-    pub items: HashMap<Id, Requirements>,
-    pub paths: HashMap<String, Requirements>,
+    pub items: IndexMap<Id, Requirements>,
+    pub paths: IndexMap<String, Requirements>,
     pub transfers: Vec<Id>,
 }
 

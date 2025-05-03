@@ -6,7 +6,7 @@ use crate::map::Gear;
 
 use super::id::Id;
 
-#[derive(Serialize)]
+#[derive(Debug, PartialEq, Eq, Serialize)]
 pub struct Spoiler {
     pub seed: String,
     pub gear: HashMap<Gear, Id>,

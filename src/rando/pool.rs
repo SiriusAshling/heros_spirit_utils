@@ -19,8 +19,14 @@ impl Pool {
         let mut items = vec![];
 
         for item in logic.items() {
-            let sprite = item.expect_sprite(maps);
-            items.push(sprite.kind.into());
+            let sprite = item.expect_sprite(maps).kind.into();
+
+            debug_assert!(
+                matches!(sprite, Sprite::Collectible(_) | Sprite::Gear(_)),
+                "attempted to add {sprite:?} to pool"
+            );
+
+            items.push(sprite);
         }
 
         Self { items }

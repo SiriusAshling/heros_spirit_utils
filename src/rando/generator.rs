@@ -1,5 +1,6 @@
 use constcat::concat_slices;
 use indexmap::IndexSet;
+use itertools::Itertools;
 use rand::seq::SliceRandom;
 use rand_pcg::Pcg64Mcg;
 use rand_seeder::Seeder;
@@ -82,8 +83,18 @@ impl<'logic> Generator<'logic> {
             .collect::<Vec<_>>();
 
         loop {
+            // TODO this happens sometimes
+            if options.is_empty() {
+                panic!(
+                    "ran out of locations with items left in the pool: {}",
+                    self.pool
+                        .iter()
+                        .format_with(", ", |item, f| f(&format_args!("{item:?}")))
+                );
+            }
+
             let sprite = self.pool.choose_remove(&mut self.rng);
-            assert!(!options.is_empty(), "ran out of locations");
+
             let location = options.choose_remove(&mut self.rng);
             self.commit_placement(location, sprite);
 
@@ -222,5 +233,27 @@ impl Seed {
                 .filter(|(_, id)| !id.is_excluded())
                 .map(|(kind, id)| (id, kind.sprite().into())),
         );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use crate::{rando::generate, rom::RomReader};
+
+    use super::*;
+
+    #[test]
+    fn determinism() {
+        let mut rom = RomReader::open(PathBuf::from("Roms/main.hsrom")).unwrap();
+        let maps = Map::parse_all(&mut rom).unwrap();
+        let mut logic = Logic::parse().unwrap();
+        logic.purge_doors(&maps);
+
+        let first = generate(&maps, &logic, Some("seed".to_string()));
+        let second = generate(&maps, &logic, Some("seed".to_string()));
+
+        assert_eq!(first, second);
     }
 }

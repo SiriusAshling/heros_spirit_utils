@@ -4,7 +4,7 @@ use crate::map::{Map, SpriteData};
 
 use super::id::Id;
 
-#[derive(Default)]
+#[derive(Debug, PartialEq, Eq, Default)]
 pub struct Seed {
     pub placements: Vec<(Id, SpriteData)>,
 }

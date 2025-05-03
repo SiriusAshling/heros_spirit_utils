@@ -1,6 +1,6 @@
 use std::{
     error::Error,
-    fmt::{self, Display},
+    fmt::{self, Debug, Display},
     str::{FromStr, SplitN},
 };
 
@@ -90,6 +90,12 @@ impl Display for Id {
 impl From<Id> for String {
     fn from(value: Id) -> Self {
         value.to_string()
+    }
+}
+
+impl Debug for Id {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        Display::fmt(self, f)
     }
 }
 
