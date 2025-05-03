@@ -108,6 +108,51 @@ impl Map {
             .and_then(|row| row.get_mut(x))
             .and_then(Option::as_mut)
     }
+
+    pub fn encode(&self) -> Vec<u8> {
+        let tile_byte_count = self.tiles().count();
+        let sprite_byte_count = self
+            .sprites()
+            .map(|sprite| 1 + sprite.extra_bytes.len())
+            .sum::<usize>();
+        let mut bytes = Vec::with_capacity(3 + tile_byte_count + sprite_byte_count);
+
+        bytes.push(self.identifier);
+        let width = self.tiles[0].len();
+        let height = self.tiles.len();
+        bytes.push(width as u8);
+        bytes.push(height as u8);
+
+        bytes.extend(
+            self.tiles()
+                .flat_map(|tile| (0..7).map(move |index| tile & (1 << (6 - index)) != 0))
+                .collect::<Vec<_>>()
+                .chunks(8)
+                .enumerate()
+                .map(|(index, bits)| {
+                    let mut byte = 0;
+                    let mut bits = bits.to_vec();
+                    while bits.len() < 8 {
+                        bits.push(false);
+                    }
+
+                    for bit_index in (0..8).rev() {
+                        let position =
+                            (10963 * self.identifier as usize + index * 8) % (1 + bit_index);
+                        byte |= (u8::from(bits.remove(position))) << bit_index;
+                    }
+                    byte
+                }),
+        );
+
+        bytes.extend(self.sprites_with_positions().flat_map(|(x, y, sprite)| {
+            let mut bytes = vec![sprite.kind, x as u8, y as u8];
+            bytes.extend(sprite.extra_bytes.iter().copied());
+            bytes
+        }));
+
+        bytes
+    }
 }
 
 pub fn map_name(map: u8) -> &'static str {
@@ -227,48 +272,4 @@ fn decode_map(bytes: &[u8]) -> Result<Map> {
         tiles,
         sprites,
     })
-}
-
-pub fn encode_map(map: &Map) -> Vec<u8> {
-    let tile_byte_count = map.tiles().count();
-    let sprite_byte_count = map
-        .sprites()
-        .map(|sprite| 1 + sprite.extra_bytes.len())
-        .sum::<usize>();
-    let mut bytes = Vec::with_capacity(3 + tile_byte_count + sprite_byte_count);
-
-    bytes.push(map.identifier);
-    let width = map.tiles[0].len();
-    let height = map.tiles.len();
-    bytes.push(width as u8);
-    bytes.push(height as u8);
-
-    bytes.extend(
-        map.tiles()
-            .flat_map(|tile| (0..7).map(move |index| tile & (1 << (6 - index)) != 0))
-            .collect::<Vec<_>>()
-            .chunks(8)
-            .enumerate()
-            .map(|(index, bits)| {
-                let mut byte = 0;
-                let mut bits = bits.to_vec();
-                while bits.len() < 8 {
-                    bits.push(false);
-                }
-
-                for bit_index in (0..8).rev() {
-                    let position = (10963 * map.identifier as usize + index * 8) % (1 + bit_index);
-                    byte |= (u8::from(bits.remove(position))) << bit_index;
-                }
-                byte
-            }),
-    );
-
-    bytes.extend(map.sprites_with_positions().flat_map(|(x, y, sprite)| {
-        let mut bytes = vec![sprite.kind, x as u8, y as u8];
-        bytes.extend(sprite.extra_bytes.iter().copied());
-        bytes
-    }));
-
-    bytes
 }

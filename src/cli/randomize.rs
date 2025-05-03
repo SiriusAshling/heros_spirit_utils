@@ -5,12 +5,11 @@ use rand_pcg::Pcg64Mcg;
 use rand_seeder::Seeder;
 
 use crate::{
-    cli::import_rom,
     graphics::merge_maps,
     helpers::{OptionExtension, ResultExtension},
-    map,
+    map::{self, Map},
     rando::{generate, Logic, Visualizer},
-    rom::{Rom, RomReader},
+    rom::{Index, Rom, RomReader, RomWriter},
     Result,
 };
 
@@ -28,7 +27,7 @@ pub fn randomize(args: RandomizeArgs) -> Result<()> {
         let mut rom = Rom::parse(&mut reader);
 
         if let (Some(mut logic), Some(maps)) = (logic, rom.maps.take()) {
-            let (mut maps, mut other) = maps
+            let (mut maps, other) = maps
                 .into_iter()
                 .partition::<Vec<_>, _>(|map| (42..=45).contains(&map.identifier));
 
@@ -40,15 +39,47 @@ pub fn randomize(args: RandomizeArgs) -> Result<()> {
             };
 
             let seed = generate(&maps, &logic, rng);
-
             seed.apply(&mut maps);
 
-            other.append(&mut maps);
-            rom.maps = Some(other);
-
-            rom.export(&mut reader);
-            import_rom(PathBuf::from("Roms/randomizer.hsrom"));
+            write_seed(maps.iter().chain(&other), reader).feedback("Write seed");
         }
+    }
+
+    Ok(())
+}
+
+fn write_seed<'a, I>(maps: I, mut reader: RomReader) -> Result<()>
+where
+    I: IntoIterator<Item = &'a Map>,
+{
+    let mut writer = RomWriter::create(PathBuf::from("Roms/randomizer.hsrom"))?;
+
+    for map in maps {
+        writer.write(&format!("Maps/map{:02}", map.identifier), &map.encode())?;
+    }
+
+    let Index {
+        graphics,
+        maps: _,
+        map_colors,
+        map_meta,
+        images,
+        audio,
+        shaders,
+        other,
+    } = reader.index;
+
+    for index in graphics
+        .into_iter()
+        .chain(map_colors)
+        .chain(map_meta)
+        .chain(images)
+        .chain(audio)
+        .chain(shaders)
+        .chain(other)
+    {
+        let file = reader.archive.by_index_raw(index)?;
+        writer.archive.raw_copy_file(file)?;
     }
 
     Ok(())

@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 
 use crate::helpers::ResultExtension;
-use crate::map::{self, Map};
+use crate::map::Map;
 use crate::rom::RomWriter;
 use crate::{graphics, helpers, saves, Result};
 
@@ -58,7 +58,7 @@ impl RomWriter {
                 .and_then(|id| id.parse().ok())
                 .ok_or_else(|| format!("invalid map identifier \"{name}\""))?;
             let map = Map::from_tmx(identifier, &helpers::read_to_string(&path)?)?;
-            self.write(&format!("Maps/{name}"), &map::encode_map(&map))?;
+            self.write(&format!("Maps/{name}"), &map.encode())?;
         }
 
         Ok(())
