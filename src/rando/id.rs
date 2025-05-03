@@ -4,15 +4,15 @@ use std::{
     str::{FromStr, SplitN},
 };
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     map::{Map, SpriteData},
     Result,
 };
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
-#[serde(try_from = "String")]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(try_from = "String", into = "String")]
 pub struct Id {
     pub map: u8,
     pub x: usize,
@@ -84,6 +84,12 @@ impl Id {
 impl Display for Id {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}.{}.{}", self.map, self.x, self.y)
+    }
+}
+
+impl From<Id> for String {
+    fn from(value: Id) -> Self {
+        value.to_string()
     }
 }
 

@@ -258,8 +258,6 @@ impl<'de> Deserialize<'de> for Requirement {
 
 #[cfg(test)]
 mod tests {
-    use rand_pcg::Pcg64Mcg;
-
     use crate::{map::Things, rando::generator::Generator};
 
     use super::*;
@@ -335,7 +333,7 @@ mod tests {
             }
         }
 
-        Generator::new(&maps, &logic, Pcg64Mcg::new(0));
+        Generator::new(&maps, &logic, None);
 
         logic.purge_doors(&maps);
 

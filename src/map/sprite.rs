@@ -2,9 +2,12 @@ use std::cmp::Ordering;
 
 use std::ops::RangeInclusive;
 
+use serde::Serialize;
+use strum::VariantNames;
+
 use crate::Result;
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy, VariantNames)]
 pub enum Collectible {
     GoldKey,
     SilverKey,
@@ -27,7 +30,7 @@ pub enum Collectible {
     PossumCoin = 34,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, Serialize, VariantNames)]
 pub enum Gear {
     Hammer = 11,
     Boots = 12,
@@ -42,7 +45,7 @@ pub enum Gear {
     RedShield = 32,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, VariantNames)]
 pub enum Door {
     Gold,
     Silver,
@@ -71,7 +74,7 @@ impl Door {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, VariantNames)]
 pub enum Enemy {
     Guard = 0,
     BSlime = 1,

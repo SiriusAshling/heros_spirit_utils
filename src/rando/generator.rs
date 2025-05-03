@@ -1,10 +1,13 @@
+use constcat::concat_slices;
 use indexmap::IndexSet;
 use rand::seq::SliceRandom;
 use rand_pcg::Pcg64Mcg;
+use rand_seeder::Seeder;
+use strum::VariantNames;
 
 use crate::{
     helpers::RemoveRandom,
-    map::{Collectible, Door, Enemy, Map, Sprite},
+    map::{Collectible, Door, Enemy, Gear, Map, Sprite},
 };
 
 use super::{
@@ -12,6 +15,7 @@ use super::{
     logic::{Logic, Reach, RequirementMap},
     pool::Pool,
     seed::Seed,
+    spoiler::Spoiler,
 };
 
 pub struct Generator<'logic> {
@@ -20,10 +24,16 @@ pub struct Generator<'logic> {
     pool: Pool,
     needs_placement: IndexSet<Id>,
     seed: Seed,
+    spoiler: Spoiler,
 }
 
 impl<'logic> Generator<'logic> {
-    pub fn new(maps: &[Map], logic: &'logic Logic, mut rng: Pcg64Mcg) -> Self {
+    pub fn new(maps: &[Map], logic: &'logic Logic, seed: Option<String>) -> Self {
+        let seed = seed.unwrap_or_else(random_seed);
+        let mut rng = Seeder::from(&seed).into_rng();
+
+        let spoiler = Spoiler::new(seed);
+
         let mut seed = Seed::default();
         let mut requirement_map = RequirementMap::new(logic);
 
@@ -41,6 +51,7 @@ impl<'logic> Generator<'logic> {
             pool,
             needs_placement,
             seed,
+            spoiler,
         };
 
         for item in logic.items() {
@@ -89,8 +100,8 @@ impl<'logic> Generator<'logic> {
         }
     }
 
-    pub fn finish(self) -> Seed {
-        self.seed
+    pub fn finish(self) -> (Seed, Spoiler) {
+        (self.seed, self.spoiler)
     }
 
     fn unreachable(&self) -> Vec<Id> {
@@ -101,7 +112,19 @@ impl<'logic> Generator<'logic> {
     fn commit_placement(&mut self, location: Id, sprite: Sprite) {
         self.needs_placement.swap_remove(&location);
         self.seed.push((location, sprite.into()));
+
+        if let Sprite::Gear(gear) = sprite {
+            self.spoiler.gear.insert(gear, location);
+        }
     }
+}
+
+fn random_seed() -> String {
+    use adjective_adjective_animal::{Generator, ADJECTIVES};
+
+    const NOUNS: &[&str] = concat_slices!([&str]: Collectible::VARIANTS, Gear::VARIANTS, Door::VARIANTS, Enemy::VARIANTS);
+
+    Generator::new(ADJECTIVES, NOUNS).next().unwrap()
 }
 
 trait BlindShuffle: Sized {

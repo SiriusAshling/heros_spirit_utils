@@ -1,14 +1,10 @@
 use std::path::PathBuf;
 
-use rand::{rng, SeedableRng};
-use rand_pcg::Pcg64Mcg;
-use rand_seeder::Seeder;
-
 use crate::{
     graphics::merge_maps,
-    helpers::{OptionExtension, ResultExtension},
+    helpers::{self, OptionExtension, ResultExtension},
     map::{self, Map},
-    rando::{generate, Logic, Visualizer},
+    rando::{generate, Logic, Spoiler, Visualizer},
     rom::{Index, Rom, RomReader, RomWriter},
     Result,
 };
@@ -33,15 +29,11 @@ pub fn randomize(args: RandomizeArgs) -> Result<()> {
 
             logic.purge_doors(&maps);
 
-            let rng = match args.seed {
-                None => Pcg64Mcg::from_rng(&mut rng()),
-                Some(seed) => Seeder::from(seed).into_rng(),
-            };
-
-            let seed = generate(&maps, &logic, rng);
+            let (seed, spoiler) = generate(&maps, &logic, args.seed);
             seed.apply(&mut maps);
 
             write_seed(maps.iter().chain(&other), reader).feedback("Write seed");
+            write_spoiler(&spoiler).feedback("Write spoiler");
         }
     }
 
@@ -81,6 +73,13 @@ where
         let file = reader.archive.by_index_raw(index)?;
         writer.archive.raw_copy_file(file)?;
     }
+
+    Ok(())
+}
+
+fn write_spoiler(spoiler: &Spoiler) -> Result<()> {
+    let yaml = serde_yaml::to_string(spoiler)?;
+    helpers::write("rando/spoiler.yaml", yaml)?;
 
     Ok(())
 }

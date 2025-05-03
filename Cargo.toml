@@ -23,3 +23,6 @@ geo = { version = "0.30.0", default-features = false }
 imageproc = { version = "0.25.0", default-features = false }
 lyon = "1.0.1"
 rand_seeder = "0.4.0"
+adjective_adjective_animal = "0.1.0"
+constcat = "0.6.0"
+serde_yaml = "0.9.34"
