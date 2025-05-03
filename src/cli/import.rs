@@ -17,6 +17,7 @@ pub fn import_saves() {
     saves::encode("savedatb").feedback("Import savedatb");
     saves::encode("savedatc").feedback("Import savedatc");
     saves::encode("bunny").feedback("Import bunny");
+    saves::encode("hcp").feedback("Import hardcore");
 }
 
 pub fn import_rom(rom: PathBuf) {

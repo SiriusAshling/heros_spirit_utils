@@ -24,6 +24,7 @@ pub struct Saves {
     pub savedatb: Option<SavePretty>,
     pub savedatc: Option<SavePretty>,
     pub bunny: Option<SavePretty>,
+    pub hardcore: Option<SavePretty>,
 }
 
 impl Saves {
@@ -32,6 +33,7 @@ impl Saves {
         let savedatb = decode("savedatb", true).ok_feedback("Export savedatb");
         let savedatc = decode("savedatc", true).ok_feedback("Export savedatc");
         let bunny = decode("bunny", false).ok_feedback("Export bunny");
+        let hardcore = decode("hcp", false).ok_feedback("Export hardcore");
         global::decode().feedback("Export global save");
 
         Self {
@@ -39,6 +41,7 @@ impl Saves {
             savedatb,
             savedatc,
             bunny,
+            hardcore,
         }
     }
 }

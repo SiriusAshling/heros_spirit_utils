@@ -36,7 +36,13 @@ impl SavePretty {
 fn relevant_map_ids(name: &str) -> &[u8] {
     match name {
         "bunny" => &[Map::HEROS_SPRINT],
-        _ => &[
+        "hcp" => &[
+            Map::HHM_CASTLE_GROUNDS,
+            Map::HHM_CASTLE_MONILLUD,
+            Map::HHM_STRANGE_AREA,
+            Map::HHM_THE_UNDERWORLD,
+        ],
+        "savedata" | "savedatb" | "savedatc" => &[
             Map::DUST_SHELF,
             Map::NORTH_MUNDEMAN,
             Map::SOUTH_MUNDEMAN,
@@ -69,6 +75,7 @@ fn relevant_map_ids(name: &str) -> &[u8] {
             Map::SMUGGLERS_ROAD,
             Map::SMUGGLERS_RUIN,
         ],
+        _ => panic!("unknown save name {name}"),
     }
 }
 

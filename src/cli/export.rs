@@ -112,19 +112,19 @@ impl Rom {
     }
 
     pub fn export_missing_items(&self, saves: &Saves) {
-        if let (Some(maps), Some(savedata), Some(savedatb), Some(savedatc), Some(bunny)) = (
-            &self.maps,
-            &saves.savedata,
-            &saves.savedatb,
-            &saves.savedatc,
-            &saves.bunny,
-        ) {
-            savedata
-                .check("savedata", maps)
-                .and(savedatb.check("savedatb", maps))
-                .and(savedatc.check("savedatc", maps))
-                .and(bunny.check("bunny", maps))
-                .feedback("Check missing items from saves");
+        if let Some(maps) = &self.maps {
+            for (name, save) in [
+                ("savedata", &saves.savedata),
+                ("savedatb", &saves.savedatb),
+                ("savedatc", &saves.savedatc),
+                ("bunny", &saves.bunny),
+                ("hcp", &saves.hardcore),
+            ] {
+                if let Some(save) = save {
+                    save.check(name, maps)
+                        .feedback(format!("Check missing items from {name}"));
+                }
+            }
         }
     }
 }
