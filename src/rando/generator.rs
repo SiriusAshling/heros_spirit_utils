@@ -193,10 +193,11 @@ impl Seed {
         id_kinds.shuffle(rng);
 
         self.extend(
-            ids.into_iter()
-                .zip(id_kinds)
-                .filter(|(id, _)| !id.is_excluded())
-                .map(|(id, kind)| (id, kind.sprite().into())),
+            id_kinds
+                .into_iter()
+                .zip(ids)
+                .filter(|(_, id)| !id.is_excluded())
+                .map(|(kind, id)| (id, kind.sprite().into())),
         );
     }
 }

@@ -37,7 +37,7 @@ pub enum Action {
     /// Additionally the file "rando/logic.json" is required.
     Randomize {
         #[command(flatten)]
-        args: RomArgs,
+        args: RandomizeArgs,
     },
     /// Visualize the contents of "rando/logic.json"
     ///
@@ -87,7 +87,7 @@ impl FromPrompt for Action {
 
         let action = match action {
             ActionDiscriminants::Randomize => Action::Randomize {
-                args: RomArgs::default(),
+                args: RandomizeArgs::default(),
             },
             ActionDiscriminants::DrawLogic => Action::DrawLogic {
                 args: RomArgs::default(),
@@ -110,6 +110,15 @@ impl FromPrompt for Action {
 
         Ok(action)
     }
+}
+
+#[derive(Args, Default)]
+pub struct RandomizeArgs {
+    #[command(flatten)]
+    pub rom_args: RomArgs,
+    /// Using the same seed will result in the same output
+    #[arg(long, short)]
+    pub seed: Option<String>,
 }
 
 #[derive(Args, Default)]

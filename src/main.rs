@@ -34,7 +34,7 @@ fn main() -> Result<()> {
     let action = cli.action.unwrap_or_prompt()?;
 
     match action {
-        Action::Randomize { args } => randomize(args.rom.unwrap_or_prompt()?),
+        Action::Randomize { args } => randomize(args)?,
         Action::DrawLogic { args } => draw_logic(args.rom.unwrap_or_prompt()?),
         Action::Export { args } => export_all(args.rom.unwrap_or_prompt()?),
         Action::Import { args } => import_all(args.rom.unwrap_or_prompt()?),

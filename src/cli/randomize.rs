@@ -2,19 +2,25 @@ use std::path::PathBuf;
 
 use rand::{rng, SeedableRng};
 use rand_pcg::Pcg64Mcg;
+use rand_seeder::Seeder;
 
 use crate::{
     cli::import_rom,
     graphics::merge_maps,
-    helpers::ResultExtension,
+    helpers::{OptionExtension, ResultExtension},
     map,
     rando::{generate, Logic, Visualizer},
     rom::{Rom, RomReader},
+    Result,
 };
 
-use super::export::{save_image, save_map_image};
+use super::{
+    export::{save_image, save_map_image},
+    RandomizeArgs,
+};
 
-pub fn randomize(rom: PathBuf) {
+pub fn randomize(args: RandomizeArgs) -> Result<()> {
+    let rom = args.rom_args.rom.unwrap_or_prompt()?;
     let logic = Logic::parse().ok_feedback("Parse logic");
 
     let reader = RomReader::open(rom);
@@ -28,7 +34,11 @@ pub fn randomize(rom: PathBuf) {
 
             logic.purge_doors(&maps);
 
-            let rng = Pcg64Mcg::from_rng(&mut rng());
+            let rng = match args.seed {
+                None => Pcg64Mcg::from_rng(&mut rng()),
+                Some(seed) => Seeder::from(seed).into_rng(),
+            };
+
             let seed = generate(&maps, &logic, rng);
 
             seed.apply(&mut maps);
@@ -40,6 +50,8 @@ pub fn randomize(rom: PathBuf) {
             import_rom(PathBuf::from("Roms/randomizer.hsrom"));
         }
     }
+
+    Ok(())
 }
 
 pub fn draw_logic(rom: PathBuf) {
