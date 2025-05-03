@@ -55,7 +55,7 @@ impl<'logic> Generator<'logic> {
 
     fn place_unreachable(&mut self, location: Id) {
         let sprite = self.pool.choose_remove(&mut self.rng);
-        self.seed.placements.push((location, sprite.into()));
+        self.seed.push((location, sprite.into()));
     }
 
     pub fn finished(&self) -> bool {
@@ -100,7 +100,7 @@ impl<'logic> Generator<'logic> {
 
     fn commit_placement(&mut self, location: Id, sprite: Sprite) {
         self.needs_placement.swap_remove(&location);
-        self.seed.placements.push((location, sprite.into()));
+        self.seed.push((location, sprite.into()));
     }
 }
 

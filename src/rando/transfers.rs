@@ -88,6 +88,12 @@ fn choose_target<'a>(
 
 impl Id {
     fn find_target_transfer(self, maps: &[Map]) -> SpriteData {
+        fn transfer_at(map: &Map, x: usize, y: usize) -> Option<&SpriteData> {
+            map.sprite(x, y).and_then(|sprite| {
+                matches!(sprite.kind.into(), Sprite::Things(Things::Transfer)).then_some(sprite)
+            })
+        }
+
         let sprite = self.expect_sprite(maps);
 
         debug_assert!(matches!(
@@ -101,10 +107,10 @@ impl Id {
         let map = target_id.expect_map(maps);
 
         x.checked_sub(1)
-            .and_then(|x| map.sprite(x, y))
-            .or_else(|| x.checked_add(1).and_then(|x| map.sprite(x, y)))
-            .or_else(|| y.checked_sub(1).and_then(|y| map.sprite(x, y)))
-            .or_else(|| y.checked_add(1).and_then(|y| map.sprite(x, y)))
+            .and_then(|x| transfer_at(map, x, y))
+            .or_else(|| x.checked_add(1).and_then(|x| transfer_at(map, x, y)))
+            .or_else(|| y.checked_sub(1).and_then(|y| transfer_at(map, x, y)))
+            .or_else(|| y.checked_add(1).and_then(|y| transfer_at(map, x, y)))
             .unwrap_or_else(|| {
                 panic!("failed to find target transfer for {self} (targets {target_id})")
             })
