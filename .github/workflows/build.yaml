@@ -42,3 +42,40 @@ jobs:
           name: heros_spirit_utils_windows
           path: ./target/release/heros_spirit_utils.exe
           if-no-files-found: error
+
+  release:
+    if: github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout 🛎
+        uses: actions/checkout@master
+
+      - uses: actions/download-artifact@v4
+
+      - name: Install zip
+        uses: montudor/action-zip@v1
+
+      - name: Create archives
+        run: |
+          cd heros_spirit_utils_linux
+          cp -r ../rando ./rando
+          cp ../README.MD ./README.MD
+          zip -r ../heros_spirit_utils_linux .
+          cd -
+          cd heros_spirit_utils_windows
+          cp -r ../rando ./rando
+          cp ../README.MD ./README.MD
+          zip -r ../heros_spirit_utils_windows .
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: |
+            heros_spirit_utils_linux.zip
+            heros_spirit_utils_windows.zip

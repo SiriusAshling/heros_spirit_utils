@@ -1,27 +1,30 @@
 **Disclaimer: This tool is not user friendly nor official. It's just a fun small pet project.**
 
+# Setup
+
+1. Download the [Latest Release](https://github.com/SiriusAshling/heros_spirit_utils/releases/latest). Choose the one that matches your operating system. There are no automatic updates, so check for updates if something doesn't work.
+2. Locate your game installation folder. It should contain the `Hero's Spirit` executable and the `Roms/` folder.
+3. Move the `heros_spirit_utils` executable into your game installation folder.
+4. Move the `rando` folder containing `logic.json` into your game installation folder.
+
 # To use for randomization
-
-## Setup
-
-1. Put into a folder next to `Roms/` (in the game files).
-2. Copy the `rando` folder from this repository next to it (the one with `logic.json` inside).
 
 ## Generate seeds
 
-Pass `randomize` to create a new `Roms/randomizer.hsrom`.
+Run `heros_spirit_utils` and choose `randomize` to create a new `Roms/randomizer.hsrom`.
 
-## Play generated seeds
+To load the randomized rom, edit `rom.txt` in your game installation folder.
+It should contain `main.hsrom` by default. Change its content to `randomizer.hsrom`.
 
-Edit `rom.txt` in your game files. It should contain `main.hsrom` by default. Change its contents to `randomizer.hsrom`.
+To play vanilla again, change its content back to `main.hsrom`.
+
+The game will read the rom when it starts, so you need to restart the game after changing the rom. Currently, only the "Heroic Hardcore" mode will be randomized.
 
 # To use for ROM hacking
 
-Put into a folder next to `Roms/` (in the game files).
+Run `heros_spirit_utils` and choose `export` or `export-rom` to export the rom. Files will be written into a folder `rom_files`.
 
-Pass `export` to export the rom. Files will be written into a folder `rom_files`.
-
-Pass `import` to import the rom. Your rom will be overwritten (best make a backup of the vanilla rom).
+Choose `import` or `import-rom` to import the rom. Your rom will be overwritten (best make a backup of the vanilla rom).
 
 ## Files you can edit
 
@@ -82,6 +85,6 @@ The 16th item in the Sprites tileset, name `Other(15)`. Add 2 custom properties:
 
 Put into a folder with your save files (in local app data).
 
-Pass `export` to export the saves to json.
+Run `heros_spirit_utils` and choose `export` or `export-saves` to export the saves to json.
 
-Pass `import` to import the json with any edits, your saves will be overwritten.
+Choose `import` or `import-saves` to import the json with any edits, your saves will be overwritten.
