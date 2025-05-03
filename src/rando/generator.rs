@@ -239,22 +239,18 @@ impl Seed {
     {
         let ids = T::iter(maps).collect::<Vec<_>>();
         let mut id_kinds = ids.iter().map(|id| T::map(*id, maps)).collect::<Vec<_>>();
-
-        requirement_map.extend(
-            ids.iter()
-                .zip(&id_kinds)
-                .map(|(id, kind)| (*id, kind.requirement())),
-        );
-
         id_kinds.shuffle(rng);
 
-        self.extend(
-            id_kinds
-                .into_iter()
-                .zip(ids)
-                .filter(|(_, id)| !id.is_excluded())
-                .map(|(kind, id)| (id, kind.sprite().into())),
-        );
+        requirement_map.reserve(id_kinds.len());
+        self.reserve(id_kinds.len());
+
+        for (kind, id) in id_kinds.into_iter().zip(ids) {
+            requirement_map.insert(id, kind.requirement());
+
+            if !id.is_excluded() {
+                self.push((id, kind.sprite().into()));
+            }
+        }
     }
 }
 
