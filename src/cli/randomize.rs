@@ -29,7 +29,7 @@ pub fn randomize(args: RandomizeArgs) -> Result<()> {
 
             logic.purge_doors(&maps);
 
-            let (seed, spoiler) = generate(&maps, &logic, args.seed);
+            let (seed, spoiler) = generate(&maps, &logic, args.seed)?;
             seed.apply(&mut maps);
 
             write_seed(maps.iter().chain(&other), reader).feedback("Write seed");
@@ -44,7 +44,7 @@ fn write_seed<'a, I>(maps: I, mut reader: RomReader) -> Result<()>
 where
     I: IntoIterator<Item = &'a Map>,
 {
-    let mut writer = RomWriter::create(PathBuf::from("Roms/randomizer.hsrom"))?;
+    let mut writer = RomWriter::create("Roms/randomizer.hsrom".into())?;
 
     for map in maps {
         writer.write(&format!("Maps/map{:02}", map.identifier), &map.encode())?;

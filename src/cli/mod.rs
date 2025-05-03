@@ -156,21 +156,17 @@ impl Display for DirEntryDisplay {
 mod tests {
     use crate::rom::{Rom, RomReader};
 
-    use std::path::PathBuf;
-
     use super::*;
 
     #[test]
     fn roundtrip() {
-        let path = PathBuf::from("Roms/main.hsrom");
-
-        let mut reader = RomReader::open(path.clone()).unwrap();
+        let mut reader = RomReader::open("Roms/main.hsrom".into()).unwrap();
         let first = Rom::parse(&mut reader);
         first.export(&mut reader);
 
-        import_rom(path.clone());
+        import_rom("Roms/test.hsrom".into());
 
-        let mut reader = RomReader::open(path.clone()).unwrap();
+        let mut reader = RomReader::open("Roms/test.hsrom".into()).unwrap();
         let second = Rom::parse(&mut reader);
 
         assert_eq!(first, second);

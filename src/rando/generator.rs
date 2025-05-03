@@ -1,14 +1,16 @@
-use constcat::concat_slices;
+// TODO investigate seed: LeatherDigressiveWitch
+
 use indexmap::IndexSet;
-use itertools::Itertools;
-use rand::seq::SliceRandom;
+use rand::{
+    seq::{IteratorRandom, SliceRandom},
+    SeedableRng,
+};
 use rand_pcg::Pcg64Mcg;
-use rand_seeder::Seeder;
-use strum::VariantNames;
 
 use crate::{
     helpers::RemoveRandom,
-    map::{Collectible, Door, Enemy, Gear, Map, Sprite},
+    map::{Collectible, Door, Enemy, Map, Sprite},
+    Result,
 };
 
 use super::{
@@ -16,24 +18,22 @@ use super::{
     logic::{Logic, Reach, RequirementMap},
     pool::Pool,
     seed::Seed,
-    spoiler::Spoiler,
+    spoiler::ItemSpoiler,
 };
 
 pub struct Generator<'logic> {
     rng: Pcg64Mcg,
     reach: Reach<'logic>,
+    reach_cache: IndexSet<Id>,
     pool: Pool,
     needs_placement: IndexSet<Id>,
     seed: Seed,
-    spoiler: Spoiler,
+    spoiler: ItemSpoiler,
 }
 
 impl<'logic> Generator<'logic> {
-    pub fn new(maps: &[Map], logic: &'logic Logic, seed: Option<String>) -> Self {
-        let seed = seed.unwrap_or_else(random_seed);
-        let mut rng = Seeder::from(&seed).into_rng();
-
-        let spoiler = Spoiler::new(seed);
+    pub fn new(maps: &[Map], logic: &'logic Logic, rng: &mut Pcg64Mcg) -> Result<Self> {
+        let mut rng = Pcg64Mcg::from_rng(rng);
 
         let mut seed = Seed::default();
         let mut requirement_map = RequirementMap::new(logic);
@@ -44,11 +44,15 @@ impl<'logic> Generator<'logic> {
 
         let reach = Reach::new(logic, logic_transfers, requirement_map);
         let pool = Pool::new(logic, maps);
-        let needs_placement = reach.reach(&pool);
+        let reach_cache = reach.reach(&pool);
+        let needs_placement = reach_cache.clone();
+
+        let spoiler = ItemSpoiler::default();
 
         let mut generator = Generator {
             rng,
             reach,
+            reach_cache,
             pool,
             needs_placement,
             seed,
@@ -58,69 +62,79 @@ impl<'logic> Generator<'logic> {
         for item in logic.items() {
             if !generator.needs_placement.contains(&item) {
                 eprintln!("item {item} is unreachable");
-                generator.place_unreachable(item);
+                generator.place_unreachable(item)?;
             }
         }
 
-        generator
+        Ok(generator)
     }
 
-    fn place_unreachable(&mut self, location: Id) {
-        let sprite = self.pool.choose_remove(&mut self.rng);
+    fn place_unreachable(&mut self, location: Id) -> Result<()> {
+        let sprite = self.pool.choose_remove_filler(&mut self.rng)?;
         self.seed.push((location, sprite.into()));
+
+        Ok(())
     }
 
     pub fn finished(&self) -> bool {
         self.pool.is_empty()
     }
 
-    pub fn place_random(&mut self) {
-        let reach = self.reach.reach(&self.pool);
-        let mut options = self
+    pub fn place_item(&mut self) -> Result<()> {
+        let sprite = self.random_item()?;
+
+        let location = *self
             .needs_placement
-            .intersection(&reach)
-            .copied()
-            .collect::<Vec<_>>();
+            .intersection(&self.reach_cache)
+            .choose(&mut self.rng)
+            .unwrap();
+        self.needs_placement.swap_remove(&location);
 
-        loop {
-            // TODO this happens sometimes
-            if options.is_empty() {
-                panic!(
-                    "ran out of locations with items left in the pool: {}",
-                    self.pool
-                        .iter()
-                        .format_with(", ", |item, f| f(&format_args!("{item:?}")))
-                );
-            }
+        self.commit_placement(location, sprite);
 
-            let sprite = self.pool.choose_remove(&mut self.rng);
-
-            let location = options.choose_remove(&mut self.rng);
-            self.commit_placement(location, sprite);
-
-            if self.finished() || matches!(sprite, Sprite::Gear(_)) {
-                break;
-            }
-        }
+        Ok(())
     }
 
-    pub fn fill_unreachable(&mut self) {
-        for location in self.unreachable() {
-            let sprite = self.pool.choose_remove_filler(&mut self.rng);
-            self.commit_placement(location, sprite);
-        }
-    }
-
-    pub fn finish(self) -> (Seed, Spoiler) {
+    pub fn finish(self) -> (Seed, ItemSpoiler) {
         (self.seed, self.spoiler)
     }
 
-    fn unreachable(&self) -> Vec<Id> {
-        let reach = self.reach.reach(&self.pool);
-        self.needs_placement.difference(&reach).copied().collect()
+    fn random_item(&mut self) -> Result<Sprite> {
+        let sprite = self.pool.choose_remove(&mut self.rng);
+
+        if matches!(sprite, Sprite::Gear(_)) {
+            self.update_reach();
+
+            if self.reach_cache.is_empty() {
+                Err(format!("failed to safely place {sprite:?}"))?;
+            }
+
+            self.fill_unreachable()?;
+        }
+
+        Ok(sprite)
+    }
+
+    fn update_reach(&mut self) {
+        self.reach_cache = self.reach.reach(&self.pool)
+    }
+
+    fn fill_unreachable(&mut self) -> Result<()> {
+        for location in self.unreachable().collect::<Vec<_>>() {
+            let sprite = self.pool.choose_remove_filler(&mut self.rng)?;
+            self.commit_placement(location, sprite);
+        }
+
+        Ok(())
+    }
+
+    fn unreachable(&self) -> impl Iterator<Item = Id> + use<'_> {
+        self.needs_placement.difference(&self.reach_cache).copied()
     }
 
     fn commit_placement(&mut self, location: Id, sprite: Sprite) {
+        debug_assert!(!self.seed.iter().any(|(id, _)| location == *id));
+
         self.needs_placement.swap_remove(&location);
         self.seed.push((location, sprite.into()));
 
@@ -128,14 +142,24 @@ impl<'logic> Generator<'logic> {
             self.spoiler.gear.insert(gear, location);
         }
     }
-}
 
-fn random_seed() -> String {
-    use adjective_adjective_animal::{Generator, ADJECTIVES};
+    #[cfg(debug_assertions)]
+    pub fn validate_seed(&self, maps: &[Map], logic: &Logic) -> Result<()> {
+        fn pool_without(sprite: Sprite, maps: &[Map], logic: &Logic) -> Pool {
+            let mut pool = Pool::new(logic, maps);
+            let index = pool.iter().position(|item| *item == sprite).unwrap();
+            pool.swap_remove(index);
+            pool
+        }
 
-    const NOUNS: &[&str] = concat_slices!([&str]: Collectible::VARIANTS, Gear::VARIANTS, Door::VARIANTS, Enemy::VARIANTS);
+        for (&gear, id) in &self.spoiler.gear {
+            let pool = pool_without(Sprite::Gear(gear), maps, logic);
+            let reach = self.reach.reach(&pool);
+            assert!(reach.contains(id));
+        }
 
-    Generator::new(ADJECTIVES, NOUNS).next().unwrap()
+        Ok(())
+    }
 }
 
 trait BlindShuffle: Sized {
@@ -238,22 +262,34 @@ impl Seed {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-
     use crate::{rando::generate, rom::RomReader};
 
     use super::*;
 
     #[test]
     fn determinism() {
-        let mut rom = RomReader::open(PathBuf::from("Roms/main.hsrom")).unwrap();
+        let mut rom = RomReader::open("Roms/main.hsrom".into()).unwrap();
         let maps = Map::parse_all(&mut rom).unwrap();
         let mut logic = Logic::parse().unwrap();
         logic.purge_doors(&maps);
 
-        let first = generate(&maps, &logic, Some("seed".to_string()));
-        let second = generate(&maps, &logic, Some("seed".to_string()));
+        let first = generate(&maps, &logic, Some("seed".to_string())).unwrap();
+        let second = generate(&maps, &logic, Some("seed".to_string())).unwrap();
 
         assert_eq!(first, second);
+    }
+
+    #[test]
+    fn completability() {
+        let mut rom = RomReader::open("Roms/main.hsrom".into()).unwrap();
+        let maps = Map::parse_all(&mut rom).unwrap();
+        let mut logic = Logic::parse().unwrap();
+        logic.purge_doors(&maps);
+
+        for seed in 0..100 {
+            if let Err(err) = generate(&maps, &logic, Some(seed.to_string())) {
+                panic!("{seed} failed: {err}");
+            }
+        }
     }
 }

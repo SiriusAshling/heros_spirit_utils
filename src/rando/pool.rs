@@ -5,6 +5,7 @@ use rand_pcg::Pcg64Mcg;
 use crate::{
     helpers::RemoveRandom,
     map::{Map, Sprite},
+    Result,
 };
 
 use super::logic::Logic;
@@ -44,7 +45,7 @@ impl Pool {
         true
     }
 
-    pub fn choose_remove_filler(&mut self, rng: &mut Pcg64Mcg) -> Sprite {
+    pub fn choose_remove_filler(&mut self, rng: &mut Pcg64Mcg) -> Result<Sprite> {
         let mut skipped = vec![];
 
         while !self.is_empty() {
@@ -54,11 +55,11 @@ impl Pool {
                 skipped.push(sprite);
             } else {
                 self.append(&mut skipped);
-                return sprite;
+                return Ok(sprite);
             }
         }
 
-        panic!("failed to choose filler item");
+        Err("failed to choose filler item")?
     }
 }
 

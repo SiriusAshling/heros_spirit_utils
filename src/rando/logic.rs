@@ -14,7 +14,7 @@ use strum::{EnumDiscriminants, EnumString, VariantArray};
 
 use crate::{
     helpers::file_open,
-    map::{Door, Gear, Map, Sprite},
+    map::{Collectible, Door, Gear, Map, Sprite},
     Result,
 };
 
@@ -152,6 +152,7 @@ impl<'logic> Reach<'logic> {
 pub struct RequirementMap {
     ring_requirement: Vec<Vec<Sprite>>,
     charm_requirement: Vec<Vec<Sprite>>,
+    shield_requirement: Vec<Vec<Sprite>>,
     id_requirements: HashMap<Id, Vec<Vec<Sprite>>>,
 }
 
@@ -160,6 +161,7 @@ impl RequirementMap {
         Self {
             ring_requirement: vec![vec![Sprite::Gear(Gear::WindRing)]],
             charm_requirement: vec![vec![Sprite::Gear(Gear::LavaCharm)]],
+            shield_requirement: vec![vec![Sprite::Collectible(Collectible::Shield)]],
             id_requirements: logic.items().map(|id| (id, vec![vec![]])).collect(),
         }
     }
@@ -168,6 +170,7 @@ impl RequirementMap {
         match requirement {
             Requirement::Ring => &self.ring_requirement,
             Requirement::Charm => &self.charm_requirement,
+            Requirement::Shield => &self.shield_requirement,
             Requirement::Id(id) => self
                 .id_requirements
                 .get(id)
@@ -205,6 +208,7 @@ type Requirements = Vec<Vec<Requirement>>;
 pub enum Requirement {
     Ring,
     Charm,
+    Shield,
     Id(Id),
 }
 
@@ -213,6 +217,7 @@ impl RequirementDiscriminants {
         match self {
             Self::Ring => "Ring",
             Self::Charm => "Charm",
+            Self::Shield => "Shield",
             Self::Id => "<map>.<x>.<y>",
         }
     }
@@ -246,6 +251,7 @@ impl<'de> Deserialize<'de> for Requirement {
         let requirement = match variant.parse() {
             Ok(RequirementDiscriminants::Ring) => Requirement::Ring,
             Ok(RequirementDiscriminants::Charm) => Requirement::Charm,
+            Ok(RequirementDiscriminants::Shield) => Requirement::Shield,
             Ok(RequirementDiscriminants::Id) | Err(_) => {
                 let id = str.parse().map_err(|_| invalid_variant::<D>(&str))?;
                 Requirement::Id(id)
@@ -258,6 +264,8 @@ impl<'de> Deserialize<'de> for Requirement {
 
 #[cfg(test)]
 mod tests {
+    use rand_pcg::Pcg64Mcg;
+
     use crate::{map::Things, rando::generator::Generator};
 
     use super::*;
@@ -333,9 +341,9 @@ mod tests {
             }
         }
 
-        Generator::new(&maps, &logic, None);
-
         logic.purge_doors(&maps);
+
+        Generator::new(&maps, &logic, &mut Pcg64Mcg::new(0)).unwrap();
 
         assert!(valid);
     }

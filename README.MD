@@ -7,6 +7,9 @@
 3. Move the `heros_spirit_utils` executable into your game installation folder.
 4. Move the `rando` folder containing `logic.json` into your game installation folder.
 
+Now you can run `heros_spirit_utils` to do any of the below.
+If something doesn't work, you may want to run it from a terminal to see any error messages.
+
 # To use for randomization
 
 ## Generate seeds
