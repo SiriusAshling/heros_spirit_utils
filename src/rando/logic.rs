@@ -309,7 +309,7 @@ mod tests {
         let maps = rom.maps.unwrap();
 
         for map in &maps {
-            if !(42..=45).contains(&map.identifier) {
+            if !map.is_hardcore() {
                 continue;
             }
 

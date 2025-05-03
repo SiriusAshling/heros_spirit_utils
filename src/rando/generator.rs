@@ -133,8 +133,6 @@ impl<'logic> Generator<'logic> {
     }
 
     fn commit_placement(&mut self, location: Id, sprite: Sprite) {
-        debug_assert!(!self.seed.iter().any(|(id, _)| location == *id));
-
         self.needs_placement.swap_remove(&location);
         self.seed.push((location, sprite.into()));
 
@@ -262,16 +260,17 @@ impl Seed {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
+    use itertools::Itertools;
+
     use crate::{rando::generate, rom::RomReader};
 
     use super::*;
 
     #[test]
     fn determinism() {
-        let mut rom = RomReader::open("Roms/main.hsrom".into()).unwrap();
-        let maps = Map::parse_all(&mut rom).unwrap();
-        let mut logic = Logic::parse().unwrap();
-        logic.purge_doors(&maps);
+        let (maps, logic) = test_logic();
 
         let first = generate(&maps, &logic, Some("seed".to_string())).unwrap();
         let second = generate(&maps, &logic, Some("seed".to_string())).unwrap();
@@ -281,15 +280,69 @@ mod tests {
 
     #[test]
     fn completability() {
-        let mut rom = RomReader::open("Roms/main.hsrom".into()).unwrap();
-        let maps = Map::parse_all(&mut rom).unwrap();
-        let mut logic = Logic::parse().unwrap();
-        logic.purge_doors(&maps);
+        let (maps, logic) = test_logic();
 
         for seed in 0..100 {
             if let Err(err) = generate(&maps, &logic, Some(seed.to_string())) {
                 panic!("{seed} failed: {err}");
             }
         }
+    }
+
+    #[test]
+    fn enough_items() {
+        let (maps, logic) = test_logic();
+
+        let (seed, _) = generate(&maps, &logic, Some("seed".to_string())).unwrap();
+
+        let mut item_counts = HashMap::<Collectible, u16>::new();
+        let mut door_counts = HashMap::<Door, u16>::new();
+
+        for (_, sprite) in seed.placements {
+            match sprite.kind.into() {
+                Sprite::Collectible(collectible) => {
+                    *item_counts.entry(collectible).or_default() += 1
+                }
+                Sprite::Door(door) => *door_counts.entry(door).or_default() += 1,
+                _ => {}
+            }
+        }
+
+        assert_eq!(item_counts[&Collectible::Sword], 99);
+        assert_eq!(item_counts[&Collectible::GoldKey], 50);
+        assert_eq!(item_counts[&Collectible::SilverKey], 50);
+        assert_eq!(item_counts[&Collectible::Gem], 99);
+
+        assert_eq!(door_counts[&Door::Gold], 50);
+        assert_eq!(door_counts[&Door::Silver], 50);
+    }
+
+    #[test]
+    fn no_duplicate_placements() {
+        let (maps, logic) = test_logic();
+
+        let (seed, _) = generate(&maps, &logic, Some("seed".to_string())).unwrap();
+
+        let duplicates = seed
+            .placements
+            .into_iter()
+            .map(|(id, _)| id)
+            .duplicates()
+            .collect::<Vec<_>>();
+
+        assert!(
+            duplicates.is_empty(),
+            "duplicate placements: {duplicates:?}"
+        );
+    }
+
+    fn test_logic() -> (Vec<Map>, Logic) {
+        let mut rom = RomReader::open("Roms/main.hsrom".into()).unwrap();
+        let mut maps = Map::parse_all(&mut rom).unwrap();
+        maps.retain(Map::is_hardcore);
+        let mut logic = Logic::parse().unwrap();
+        logic.purge_doors(&maps);
+
+        (maps, logic)
     }
 }

@@ -72,6 +72,10 @@ impl Map {
             .collect()
     }
 
+    pub fn is_hardcore(&self) -> bool {
+        (Map::HHM_CASTLE_GROUNDS..=Map::HHM_THE_UNDERWORLD).contains(&self.identifier)
+    }
+
     pub fn tiles(&self) -> impl Iterator<Item = u8> + use<'_> {
         self.tiles.iter().flatten().copied()
     }

@@ -23,9 +23,7 @@ pub fn randomize(args: RandomizeArgs) -> Result<()> {
         let mut rom = Rom::parse(&mut reader);
 
         if let (Some(mut logic), Some(maps)) = (logic, rom.maps.take()) {
-            let (mut maps, other) = maps
-                .into_iter()
-                .partition::<Vec<_>, _>(|map| (42..=45).contains(&map.identifier));
+            let (mut maps, other) = maps.into_iter().partition::<Vec<_>, _>(Map::is_hardcore);
 
             logic.purge_doors(&maps);
 
@@ -101,7 +99,7 @@ pub fn draw_logic(rom: PathBuf) {
     let visualizer = Visualizer::new(&logic);
 
     for map in maps {
-        if !(42..=45).contains(&map.identifier) {
+        if !map.is_hardcore() {
             continue;
         }
 

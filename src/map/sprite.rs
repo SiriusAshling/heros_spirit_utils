@@ -45,7 +45,7 @@ pub enum Gear {
     RedShield = 32,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, VariantNames)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, VariantNames)]
 pub enum Door {
     Gold,
     Silver,
@@ -252,7 +252,7 @@ impl SpriteData {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Sprite {
     Collectible(Collectible),
     Gear(Gear),
